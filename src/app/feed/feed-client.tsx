@@ -17,6 +17,7 @@ import { SectionBar } from "@/components/trico/section-bar";
 import { TimeFilter } from "@/components/trico/time-filter";
 import { usePreferences } from "@/components/trico/preferences-provider";
 import { SiteFooter } from "@/components/trico/site-footer";
+import { ScrollReveal } from "@/components/trico/scroll-reveal";
 import { SECTORS } from "@/lib/sectors";
 import type { Piece, SectorId, TimeWindow } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -156,9 +157,11 @@ export default function FeedPage() {
           </div>
         ) : sectorParam ? (
           <section>
-            <SectionBar
-              title={SECTORS.find((s) => s.id === sectorParam)?.name || "Sector"}
-            />
+            <ScrollReveal variant="down" duration={700}>
+              <SectionBar
+                title={SECTORS.find((s) => s.id === sectorParam)?.name || "Sector"}
+              />
+            </ScrollReveal>
             <PieceSectorGrid pieces={pieces} />
           </section>
         ) : (
@@ -166,22 +169,26 @@ export default function FeedPage() {
             <section className="grid gap-4 lg:grid-cols-[1.4fr_1fr_0.9fr]">
               <div>{hero ? <PieceFeature piece={hero} /> : null}</div>
               <div className="space-y-3">
-                {secondary.map((p) => (
-                  <PieceFeature key={p.id} piece={p} />
+                {secondary.map((p, i) => (
+                  <PieceFeature key={p.id} piece={p} delay={100 * (i + 1)} />
                 ))}
               </div>
               <aside>
-                <SectionBar title="Últimas notícias" />
+                <ScrollReveal variant="zoom" duration={700}>
+                  <SectionBar title="Últimas notícias" />
+                </ScrollReveal>
                 <ul className="divide-y divide-line border border-line">
-                  {latest.map((p) => (
-                    <li key={p.id}>
-                      <Link
-                        href={`/peca/${p.id}`}
-                        className="block px-3 py-2.5 text-sm font-semibold leading-snug text-navy hover:bg-secondary hover:text-terracotta"
-                      >
-                        {p.title}
-                      </Link>
-                    </li>
+                  {latest.map((p, i) => (
+                    <ScrollReveal key={p.id} variant="up" delay={50 * i} duration={650}>
+                      <li>
+                        <Link
+                          href={`/peca/${p.id}`}
+                          className="block px-3 py-2.5 text-sm font-semibold leading-snug text-navy hover:bg-secondary hover:text-terracotta"
+                        >
+                          {p.title}
+                        </Link>
+                      </li>
+                    </ScrollReveal>
                   ))}
                 </ul>
               </aside>
@@ -192,13 +199,15 @@ export default function FeedPage() {
               if (list.length === 0) return null;
               return (
                 <section key={sector.id} className="mt-8">
-                  <SectionBar
-                    title={sector.short}
-                    href={`/feed?tempo=${tempo}&sector=${sector.id}`}
-                  />
+                  <ScrollReveal variant="down" duration={700}>
+                    <SectionBar
+                      title={sector.short}
+                      href={`/feed?tempo=${tempo}&sector=${sector.id}`}
+                    />
+                  </ScrollReveal>
                   <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-                    {list.slice(0, 4).map((p) => (
-                      <PieceRow key={p.id} piece={p} />
+                    {list.slice(0, 4).map((p, i) => (
+                      <PieceRow key={p.id} piece={p} delay={70 * i} />
                     ))}
                   </div>
                 </section>

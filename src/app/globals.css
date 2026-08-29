@@ -163,6 +163,33 @@
   .reveal {
     animation: reveal-up 0.45s ease both;
   }
+
+  /* Scroll reveal — padrão Aliva/AOS */
+  .sr-base {
+    opacity: 0;
+    transition-property: opacity, transform;
+    transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: opacity, transform;
+  }
+  .sr-up {
+    transform: translate3d(0, 36px, 0);
+  }
+  .sr-down {
+    transform: translate3d(0, -28px, 0);
+  }
+  .sr-left {
+    transform: translate3d(-40px, 0, 0);
+  }
+  .sr-right {
+    transform: translate3d(40px, 0, 0);
+  }
+  .sr-zoom {
+    transform: scale(0.94);
+  }
+  .sr-in {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 @keyframes reveal-up {
@@ -173,5 +200,13 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sr-base {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
   }
 }

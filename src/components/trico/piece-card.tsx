@@ -1,8 +1,15 @@
+"use client";
+
+/**
+ * Cards editoriais estilo portal — linhas horizontais e destaques.
+ * Cada bloco entra com reveal ao scroll (padrão Aliva / AOS fade-up).
+ */
 import Link from "next/link";
 import type { Piece, SectorId } from "@/lib/types";
 import { getSector } from "@/lib/sectors";
 import { formatRelativeTime } from "@/lib/format";
 import { LogoMark } from "@/components/trico/logo";
+import { ScrollReveal } from "@/components/trico/scroll-reveal";
 import { cn } from "@/lib/utils";
 
 function Thumb({
@@ -32,55 +39,62 @@ function Thumb({
 export function PieceRow({
   piece,
   className,
+  delay = 0,
 }: {
   piece: Piece;
   className?: string;
+  delay?: number;
 }) {
   return (
-    <article
-      className={cn(
-        "group relative flex gap-3 border border-line bg-white p-2 transition hover:border-navy/30",
-        className,
-      )}
-    >
-      <Thumb sectorId={piece.sectorId} size="sm" />
-      <div className="min-w-0 flex-1 py-0.5">
-        <h3 className="text-sm font-bold leading-snug text-navy group-hover:text-terracotta">
-          <Link href={`/peca/${piece.id}`} className="stretched-link">
-            {piece.title}
-          </Link>
-        </h3>
-        <p className="mt-1 text-xs text-muted-foreground">
-          {formatRelativeTime(piece.publishedAt)} · {piece.sourceCount} fontes
-        </p>
-      </div>
-    </article>
+    <ScrollReveal variant="up" delay={delay} duration={700} className={className}>
+      <article className="group relative flex gap-3 border border-line bg-white p-2 transition hover:border-navy/30">
+        <Thumb sectorId={piece.sectorId} size="sm" />
+        <div className="min-w-0 flex-1 py-0.5">
+          <h3 className="text-sm font-bold leading-snug text-navy group-hover:text-terracotta">
+            <Link href={`/peca/${piece.id}`} className="stretched-link">
+              {piece.title}
+            </Link>
+          </h3>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {formatRelativeTime(piece.publishedAt)} · {piece.sourceCount} fontes
+          </p>
+        </div>
+      </article>
+    </ScrollReveal>
   );
 }
 
 /** Destaque vertical com imagem grande. */
-export function PieceFeature({ piece }: { piece: Piece }) {
+export function PieceFeature({
+  piece,
+  delay = 0,
+}: {
+  piece: Piece;
+  delay?: number;
+}) {
   const sector = getSector(piece.sectorId);
   return (
-    <article className="group relative border border-line bg-white">
-      <Thumb sectorId={piece.sectorId} size="lg" />
-      <div className="space-y-2 p-3 sm:p-4">
-        <p className="text-[11px] font-bold uppercase tracking-wide text-terracotta">
-          {sector?.short}
-        </p>
-        <h3 className="text-lg font-bold leading-snug text-navy group-hover:text-terracotta sm:text-xl">
-          <Link href={`/peca/${piece.id}`} className="stretched-link">
-            {piece.title}
-          </Link>
-        </h3>
-        <p className="line-clamp-3 text-sm leading-relaxed text-muted-foreground">
-          {piece.summary}
-        </p>
-        <p className="text-xs text-muted-foreground">
-          {formatRelativeTime(piece.publishedAt)} · {piece.sourceCount} fontes
-        </p>
-      </div>
-    </article>
+    <ScrollReveal variant="up" delay={delay} duration={800}>
+      <article className="group relative border border-line bg-white">
+        <Thumb sectorId={piece.sectorId} size="lg" />
+        <div className="space-y-2 p-3 sm:p-4">
+          <p className="text-[11px] font-bold uppercase tracking-wide text-terracotta">
+            {sector?.short}
+          </p>
+          <h3 className="text-lg font-bold leading-snug text-navy group-hover:text-terracotta sm:text-xl">
+            <Link href={`/peca/${piece.id}`} className="stretched-link">
+              {piece.title}
+            </Link>
+          </h3>
+          <p className="line-clamp-3 text-sm leading-relaxed text-muted-foreground">
+            {piece.summary}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {formatRelativeTime(piece.publishedAt)} · {piece.sourceCount} fontes
+          </p>
+        </div>
+      </article>
+    </ScrollReveal>
   );
 }
 
@@ -119,8 +133,8 @@ export function PieceGrid({ pieces }: { pieces: Piece[] }) {
     <div className="grid gap-4 lg:grid-cols-[1.2fr_1fr]">
       <PieceFeature piece={hero} />
       <div className="grid gap-2 content-start">
-        {rest.slice(0, 6).map((p) => (
-          <PieceRow key={p.id} piece={p} />
+        {rest.slice(0, 6).map((p, i) => (
+          <PieceRow key={p.id} piece={p} delay={80 * (i + 1)} />
         ))}
       </div>
     </div>
@@ -135,8 +149,8 @@ export function PieceSectorGrid({ pieces }: { pieces: Piece[] }) {
   }
   return (
     <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-      {pieces.map((p) => (
-        <PieceRow key={p.id} piece={p} />
+      {pieces.map((p, i) => (
+        <PieceRow key={p.id} piece={p} delay={60 * (i % 8)} />
       ))}
     </div>
   );
