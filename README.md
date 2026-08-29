@@ -14,7 +14,7 @@ npm run ingest         # opcional: RSS + seed
 npm run dev
 ```
 
-Abre [http://127.0.0.1:43123](http://127.0.0.1:43123).
+Abre [http://127.0.0.1:43124](http://127.0.0.1:43124).
 
 Produção: [https://tric-agent.vercel.app](https://tric-agent.vercel.app)  
 Guia Postgres + Auth: [`docs/POSTGRES_AUTH.md`](docs/POSTGRES_AUTH.md)
@@ -41,7 +41,7 @@ Sem `DATABASE_URL` Postgres a app corre em modo mock. Com URL, auth e peças usa
 
 | Comando | Descrição |
 |---------|-----------|
-| `npm run dev` | Servidor em `:43123` |
+| `npm run dev` | Servidor em `:43124` |
 | `npm run ingest` | RSS + pipeline IA |
 | `npm run db:push` | Sincronizar schema Prisma |
 | `npm run build` | Build de produção |
