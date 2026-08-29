@@ -1,6 +1,6 @@
 /**
  * Preferências do utilizador autenticado (sincroniza com a BD).
- * Teste: GET/PUT /api/me/preferences (com sessão).
+ * Sem BD (Vercel): devolve defaults / 503.
  */
 import { NextResponse } from "next/server";
 import { z } from "zod";
@@ -20,6 +20,17 @@ export async function GET() {
     return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
   }
 
+  if (!prisma) {
+    return NextResponse.json({
+      sectors: [],
+      notifications: "app",
+      onboarded: false,
+      plan: "gratuito",
+      user: { email: session.user.email, name: session.user.name },
+      database: false,
+    });
+  }
+
   const prefs = await prisma.userPreference.findUnique({
     where: { userId: session.user.id },
   });
@@ -34,6 +45,7 @@ export async function GET() {
     onboarded: prefs?.onboarded ?? false,
     plan: user?.plan ?? "gratuito",
     user,
+    database: true,
   });
 }
 
@@ -41,6 +53,13 @@ export async function PUT(req: Request) {
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
+  }
+
+  if (!prisma) {
+    return NextResponse.json(
+      { error: "BD indisponível neste ambiente." },
+      { status: 503 },
+    );
   }
 
   const body = await req.json();

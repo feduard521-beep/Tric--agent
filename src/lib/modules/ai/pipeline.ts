@@ -10,7 +10,12 @@ import {
   getAiProviderName,
   summarizeArticle,
 } from "./provider";
-import type { SectorId, TimeWindow } from "@/lib/types";
+import type { TimeWindow } from "@/lib/types";
+
+function db() {
+  if (!prisma) throw new Error("BD indisponível para o pipeline de IA.");
+  return prisma;
+}
 
 function slugify(input: string) {
   return input
@@ -40,7 +45,8 @@ function inferImpact(title: string, body: string): "alto" | "medio" | "baixo" {
 }
 
 export async function processUnprocessedArticles(limit = 40) {
-  const articles = await prisma.article.findMany({
+  const client = db();
+  const articles = await client.article.findMany({
     where: { processed: false },
     orderBy: { publishedAt: "desc" },
     take: limit,
@@ -57,7 +63,7 @@ export async function processUnprocessedArticles(limit = 40) {
       article.sectorId || article.feed.sectorHint,
     );
 
-    await prisma.article.update({
+    await client.article.update({
       where: { id: article.id },
       data: { sectorId, processed: true },
     });
@@ -68,14 +74,14 @@ export async function processUnprocessedArticles(limit = 40) {
       sectorId,
     );
 
-    const themeId = slugify(article.title.split(/[:\-–|]/)[0] || article.title) || "tema";
+    const themeId =
+      slugify(article.title.split(/[:\-–|]/)[0] || article.title) || "tema";
     const timeWindow = inferTimeWindow(article.publishedAt);
     const impact = inferImpact(article.title, article.summary);
     const isBreaking = timeWindow === "hora" && impact !== "baixo";
 
-    // Reutiliza peça do mesmo tema+janela+sector se existir nas últimas 24h
     const since = new Date(Date.now() - 24 * 3_600_000);
-    const existing = await prisma.piece.findFirst({
+    const existing = await client.piece.findFirst({
       where: {
         themeId,
         sectorId,
@@ -88,10 +94,10 @@ export async function processUnprocessedArticles(limit = 40) {
     if (existing) {
       const already = existing.sources.some((s) => s.articleId === article.id);
       if (!already) {
-        await prisma.pieceSource.create({
+        await client.pieceSource.create({
           data: { pieceId: existing.id, articleId: article.id },
         });
-        await prisma.piece.update({
+        await client.piece.update({
           where: { id: existing.id },
           data: {
             sourceCount: existing.sourceCount + 1,
@@ -101,7 +107,7 @@ export async function processUnprocessedArticles(limit = 40) {
         });
       }
     } else {
-      await prisma.piece.create({
+      await client.piece.create({
         data: {
           sectorId,
           title: article.title.slice(0, 240),
@@ -128,13 +134,14 @@ export async function processUnprocessedArticles(limit = 40) {
 
 /** Semeia peças editoriais mock se a BD estiver vazia (dev sem rede). */
 export async function seedMockPiecesIfEmpty() {
-  const count = await prisma.piece.count();
+  if (!prisma) return { seeded: false, count: 0 };
+  const client = prisma;
+  const count = await client.piece.count();
   if (count > 0) return { seeded: false, count };
 
   const { PIECES } = await import("@/lib/data");
   for (const p of PIECES) {
-    // Artigo sintético para satisfazer a relação de fontes
-    const feed = await prisma.feedSource.upsert({
+    const feed = await client.feedSource.upsert({
       where: { url: "local://mock-seed" },
       create: {
         name: "Seed editorial Tricô",
@@ -145,7 +152,7 @@ export async function seedMockPiecesIfEmpty() {
       update: {},
     });
 
-    const article = await prisma.article.create({
+    const article = await client.article.create({
       data: {
         feedId: feed.id,
         guid: `seed-${p.id}`,
@@ -159,7 +166,7 @@ export async function seedMockPiecesIfEmpty() {
       },
     });
 
-    await prisma.piece.create({
+    await client.piece.create({
       data: {
         id: p.id,
         sectorId: p.sectorId,

@@ -5,6 +5,7 @@
  *     -H "x-ingest-secret: trico-ingest-local"
  */
 import { NextResponse } from "next/server";
+import { prisma } from "@/lib/db";
 import { runIngest } from "@/lib/modules/rss/ingest";
 
 export const maxDuration = 60;
@@ -14,6 +15,18 @@ export async function POST(req: Request) {
   const expected = process.env.INGEST_SECRET || "trico-ingest-local";
   if (secret !== expected) {
     return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
+  }
+
+  if (!prisma) {
+    return NextResponse.json(
+      {
+        status: "error",
+        message: "Ingestão indisponível sem BD (Vercel). Corre npm run ingest em local.",
+        fetchedCount: 0,
+        createdPieces: 0,
+      },
+      { status: 503 },
+    );
   }
 
   const result = await runIngest();

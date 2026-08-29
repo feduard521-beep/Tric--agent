@@ -1,11 +1,17 @@
 /**
  * Repositório de peças — camada de leitura para a UI e APIs móveis.
- * Preferência: BD; fallback: dados mock em memória.
+ * Preferência: BD; fallback: dados mock em memória (obrigatório na Vercel).
  *
  * Teste: GET /api/pieces?tempo=dia
  */
 import { prisma } from "@/lib/db";
-import { PIECES, getDailyDigest as mockDigest, getPiece as mockGetPiece, getPiecesByTheme as mockTheme, filterPieces as mockFilter } from "@/lib/data";
+import {
+  PIECES,
+  getDailyDigest as mockDigest,
+  getPiece as mockGetPiece,
+  getPiecesByTheme as mockTheme,
+  filterPieces as mockFilter,
+} from "@/lib/data";
 import type { Piece, SectorId, TimeWindow } from "@/lib/types";
 import { seedMockPiecesIfEmpty } from "@/lib/modules/ai/pipeline";
 
@@ -53,6 +59,7 @@ const pieceInclude = {
 } as const;
 
 export async function ensureContentReady() {
+  if (!prisma) return;
   try {
     await seedMockPiecesIfEmpty();
   } catch (err) {
@@ -68,6 +75,14 @@ export async function listPieces(opts: {
   limit?: number;
 }): Promise<Piece[]> {
   try {
+    if (!prisma) {
+      return mockFilter({
+        sectorId: opts.sectorId,
+        timeWindow: opts.timeWindow,
+        query: opts.query,
+        sectorIds: opts.sectorIds,
+      }).slice(0, opts.limit ?? 40);
+    }
     await ensureContentReady();
     const where: Record<string, unknown> = {};
     if (opts.sectorId) where.sectorId = opts.sectorId;
@@ -90,7 +105,10 @@ export async function listPieces(opts: {
     });
     if (rows.length) return rows.map(mapDbPiece);
   } catch (err) {
-    console.warn("[pieces] BD indisponível, a usar mock:", err instanceof Error ? err.message : err);
+    console.warn(
+      "[pieces] BD indisponível, a usar mock:",
+      err instanceof Error ? err.message : err,
+    );
   }
 
   return mockFilter({
@@ -103,6 +121,7 @@ export async function listPieces(opts: {
 
 export async function getPieceById(id: string): Promise<Piece | null> {
   try {
+    if (!prisma) return mockGetPiece(id) ?? null;
     await ensureContentReady();
     const row = await prisma.piece.findUnique({
       where: { id },
@@ -117,6 +136,7 @@ export async function getPieceById(id: string): Promise<Piece | null> {
 
 export async function getThemeTimeline(themeId: string): Promise<Piece[]> {
   try {
+    if (!prisma) return mockTheme(themeId);
     const rows = await prisma.piece.findMany({
       where: { themeId },
       include: pieceInclude,
@@ -131,6 +151,7 @@ export async function getThemeTimeline(themeId: string): Promise<Piece[]> {
 
 export async function getDailyDigestPieces(): Promise<Piece[]> {
   try {
+    if (!prisma) return mockDigest();
     await ensureContentReady();
     const rows = await prisma.piece.findMany({
       where: { timeWindow: "dia" },
@@ -147,6 +168,16 @@ export async function getDailyDigestPieces(): Promise<Piece[]> {
 
 export async function getContentStats() {
   try {
+    if (!prisma) {
+      return {
+        pieces: PIECES.length,
+        articles: 0,
+        feeds: 0,
+        lastIngest: null,
+        source: "mock" as const,
+        mockFallbackAvailable: PIECES.length,
+      };
+    }
     const [pieces, articles, feeds, runs] = await Promise.all([
       prisma.piece.count(),
       prisma.article.count(),

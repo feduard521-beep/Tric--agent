@@ -1,12 +1,8 @@
 /**
  * Configuração Auth.js (NextAuth v5).
- * - Email/password (Credentials) sempre activo para o MVP local.
- * - Google / Apple só se existirem variáveis de ambiente.
- *
- * Teste:
- *   1. POST /api/auth/register { email, password, name }
- *   2. Abrir /entrar e autenticar
- *   3. Com AUTH_GOOGLE_ID/SECRET, o botão Google aparece
+ * - Email/password (Credentials) activo quando há BD local.
+ * - Na Vercel sem BD: Auth.js arranca, mas login/registo ficam indisponíveis até Postgres.
+ * - Google / Apple só com variáveis de ambiente.
  */
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
@@ -39,7 +35,7 @@ function socialProviders() {
 }
 
 export const authConfig: NextAuthConfig = {
-  adapter: PrismaAdapter(prisma),
+  ...(prisma ? { adapter: PrismaAdapter(prisma) } : {}),
   session: { strategy: "jwt" },
   pages: {
     signIn: "/entrar",
@@ -52,6 +48,7 @@ export const authConfig: NextAuthConfig = {
         password: { label: "Palavra-passe", type: "password" },
       },
       async authorize(credentials) {
+        if (!prisma) return null;
         const email = String(credentials?.email || "")
           .trim()
           .toLowerCase();
@@ -89,16 +86,16 @@ export const authConfig: NextAuthConfig = {
     },
   },
   trustHost: true,
-  secret: process.env.AUTH_SECRET,
+  secret: process.env.AUTH_SECRET || "trico-build-placeholder-change-me",
 };
 
 export const { handlers, auth, signIn, signOut } = NextAuth(authConfig);
 
-/** Indica que provedores sociais estão configurados (para a UI). */
 export function getAuthFlags() {
   return {
     google: Boolean(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET),
     apple: Boolean(process.env.AUTH_APPLE_ID && process.env.AUTH_APPLE_SECRET),
-    credentials: true,
+    credentials: Boolean(prisma),
+    database: Boolean(prisma),
   };
 }

@@ -1,8 +1,6 @@
 /**
  * Registo local por email + palavra-passe.
- * Teste: curl -X POST http://127.0.0.1:43123/api/auth/register \
- *   -H 'content-type: application/json' \
- *   -d '{"email":"demo@trico.ao","password":"trico1234","name":"Demo"}'
+ * Na Vercel sem BD devolve 503 (usar Postgres numa fase seguinte).
  */
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
@@ -17,6 +15,16 @@ const schema = z.object({
 
 export async function POST(req: Request) {
   try {
+    if (!prisma) {
+      return NextResponse.json(
+        {
+          error:
+            "Registo indisponível neste ambiente (sem base de dados). Corre localmente ou liga Postgres na Vercel.",
+        },
+        { status: 503 },
+      );
+    }
+
     const body = await req.json();
     const parsed = schema.safeParse(body);
     if (!parsed.success) {

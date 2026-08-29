@@ -26,10 +26,16 @@ export type IngestResult = {
   status: "ok" | "error";
 };
 
+function db() {
+  if (!prisma) throw new Error("BD indisponível — ingestão RSS requer SQLite/Postgres.");
+  return prisma;
+}
+
 /** Garante que as fontes RSS existem na BD. */
 export async function ensureFeedSources() {
+  const client = db();
   for (const feed of RSS_FEEDS) {
-    await prisma.feedSource.upsert({
+    await client.feedSource.upsert({
       where: { url: feed.url },
       create: {
         name: feed.name,
@@ -64,12 +70,13 @@ async function fetchFeedItems(url: string) {
 }
 
 export async function runIngest(): Promise<IngestResult> {
-  const run = await prisma.ingestRun.create({ data: { status: "running" } });
+  const client = db();
+  const run = await client.ingestRun.create({ data: { status: "running" } });
   let fetchedCount = 0;
 
   try {
     await ensureFeedSources();
-    const sources = await prisma.feedSource.findMany({ where: { active: true } });
+    const sources = await client.feedSource.findMany({ where: { active: true } });
 
     for (const source of sources) {
       const items = await fetchFeedItems(source.url);
@@ -87,7 +94,7 @@ export async function runIngest(): Promise<IngestResult> {
         const summary = stripHtml(item.contentSnippet || item.summary || item.content || "");
         const content = stripHtml(item.content || item["content:encoded"] || summary);
 
-        await prisma.article.upsert({
+        await client.article.upsert({
           where: {
             feedId_guid: { feedId: source.id, guid: String(guid).slice(0, 500) },
           },
@@ -113,7 +120,7 @@ export async function runIngest(): Promise<IngestResult> {
         fetchedCount += 1;
       }
 
-      await prisma.feedSource.update({
+      await client.feedSource.update({
         where: { id: source.id },
         data: { lastFetch: new Date() },
       });
@@ -122,7 +129,7 @@ export async function runIngest(): Promise<IngestResult> {
     const { createdPieces } = await processUnprocessedArticles();
 
     const message = `Ingestão OK: ${fetchedCount} artigos tocados, ${createdPieces} peças geradas.`;
-    await prisma.ingestRun.update({
+    await client.ingestRun.update({
       where: { id: run.id },
       data: {
         status: "ok",
@@ -137,15 +144,19 @@ export async function runIngest(): Promise<IngestResult> {
     return { fetchedCount, createdPieces, message, status: "ok" };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Erro desconhecido na ingestão";
-    await prisma.ingestRun.update({
-      where: { id: run.id },
-      data: {
-        status: "error",
-        finishedAt: new Date(),
-        fetchedCount,
-        message,
-      },
-    });
+    try {
+      await client.ingestRun.update({
+        where: { id: run.id },
+        data: {
+          status: "error",
+          finishedAt: new Date(),
+          fetchedCount,
+          message,
+        },
+      });
+    } catch {
+      /* ignore */
+    }
     console.error(`[rss] ${message}`);
     return { fetchedCount, createdPieces: 0, message, status: "error" };
   }
