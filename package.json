@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --hostname 127.0.0.1 --port 43123",
+    "dev": "next dev --hostname 127.0.0.1 --port 43124",
     "build": "prisma generate && node scripts/db-migrate.cjs && next build",
-    "start": "next start --hostname 127.0.0.1 --port 43123",
+    "start": "next start --hostname 127.0.0.1 --port 43124",
     "lint": "eslint",
     "postinstall": "prisma generate",
     "db:push": "prisma db push",
