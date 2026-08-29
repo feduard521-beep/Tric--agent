@@ -23,12 +23,16 @@ export default function FeedPage() {
   const digest = useMemo(() => getDailyDigest(), []);
   const followed = prefs.sectors.length ? prefs.sectors : SECTORS.map((s) => s.id);
 
+  const isPremium = prefs.plan === "premium";
+  const yearLocked = tempo === "ano" && !isPremium;
+
   const pieces = useMemo(() => {
+    if (yearLocked) return [];
     if (sectorParam) {
       return filterPieces({ sectorId: sectorParam, timeWindow: tempo });
     }
     return filterPieces({ sectorIds: followed, timeWindow: tempo });
-  }, [followed, sectorParam, tempo]);
+  }, [followed, sectorParam, tempo, yearLocked]);
 
   return (
     <div className="flex min-h-full flex-col pb-24 md:pb-10">
@@ -105,7 +109,28 @@ export default function FeedPage() {
               ? SECTORS.find((s) => s.id === sectorParam)?.name
               : "Os teus sectores"}
           </h2>
-          <PieceGrid pieces={pieces} />
+          {yearLocked ? (
+            <div className="rounded-3xl border border-navy/10 bg-navy px-6 py-10 text-cream">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cream/50">
+                Premium
+              </p>
+              <h3 className="mt-2 font-display text-2xl font-semibold">
+                Resumo do Ano
+              </h3>
+              <p className="mt-2 max-w-lg text-sm text-cream/70">
+                A retrospectiva anual tece os padrões do teu sector num único
+                quadro. Disponível no plano Premium.
+              </p>
+              <Link
+                href="/perfil"
+                className="mt-5 inline-flex h-10 items-center rounded-lg bg-terracotta px-4 text-sm font-medium text-white hover:bg-terracotta/90"
+              >
+                Ver planos no perfil
+              </Link>
+            </div>
+          ) : (
+            <PieceGrid pieces={pieces} />
+          )}
         </section>
       </main>
       <BottomNav />
