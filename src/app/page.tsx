@@ -3,19 +3,19 @@ import { ArrowRight, Clock3, Layers3, Sparkles } from "lucide-react";
 import { Logo, LogoMark } from "@/components/trico/logo";
 import { PieceCard } from "@/components/trico/piece-card";
 import { buttonVariants } from "@/components/ui/button";
-import { getDailyDigest } from "@/lib/data";
+import { getDailyDigestPieces } from "@/lib/modules/pieces/repository";
 import { SECTORS } from "@/lib/sectors";
 import { cn } from "@/lib/utils";
 
-export default function LandingPage() {
-  const digest = getDailyDigest();
+export default async function LandingPage() {
+  const digest = await getDailyDigestPieces();
 
   return (
     <div className="relative flex min-h-full flex-col">
       <header className="relative z-10 mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-5 sm:px-6">
         <Logo withTagline />
         <Link
-          href="/onboarding"
+          href="/entrar"
           className={cn(
             buttonVariants({ variant: "outline" }),
             "border-navy/20 bg-white/50 text-navy hover:bg-white",
@@ -47,7 +47,7 @@ export default function LandingPage() {
               </p>
               <div className="reveal reveal-delay-3 mt-8 flex flex-wrap items-center gap-3">
                 <Link
-                  href="/onboarding"
+                  href="/entrar"
                   className={cn(
                     buttonVariants({ size: "lg" }),
                     "h-12 bg-terracotta px-6 text-base text-white hover:bg-terracotta/90",

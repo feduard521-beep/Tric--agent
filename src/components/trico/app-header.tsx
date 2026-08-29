@@ -11,6 +11,7 @@ const LINKS = [
   { href: "/sectores", label: "Sectores" },
   { href: "/pesquisar", label: "Pesquisar" },
   { href: "/perfil", label: "Perfil" },
+  { href: "/entrar", label: "Conta" },
 ];
 
 export function AppHeader({ solid = false }: { solid?: boolean }) {

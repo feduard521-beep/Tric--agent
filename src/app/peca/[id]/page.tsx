@@ -6,7 +6,10 @@ import { BottomNav } from "@/components/trico/bottom-nav";
 import { PieceCard } from "@/components/trico/piece-card";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
-import { getPiece, getPiecesByTheme } from "@/lib/data";
+import {
+  getPieceById,
+  getThemeTimeline,
+} from "@/lib/modules/pieces/repository";
 import { getSector } from "@/lib/sectors";
 import { formatClock } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -20,11 +23,11 @@ export default async function PiecePage({
 }) {
   const { id } = await params;
   const { timeline } = await searchParams;
-  const piece = getPiece(id);
+  const piece = await getPieceById(id);
   if (!piece) notFound();
 
   const sector = getSector(piece.sectorId);
-  const timelinePieces = getPiecesByTheme(piece.themeId);
+  const timelinePieces = await getThemeTimeline(piece.themeId);
   const showTimeline = timeline === "1";
 
   return (
@@ -66,7 +69,7 @@ export default async function PiecePage({
             </p>
             <ul className="mt-4 space-y-2">
               {piece.sources.map((source) => (
-                <li key={source.url}>
+                <li key={source.url + source.name}>
                   <a
                     href={source.url}
                     target="_blank"

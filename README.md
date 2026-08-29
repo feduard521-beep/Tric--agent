@@ -2,43 +2,41 @@
 
 **As notícias do teu sector, tecidas para ti.**
 
-MVP web da plataforma Tricô — agregador e resumidor de notícias por sector, com foco em Angola.
+MVP web + backend local da plataforma Tricô (Angola): UI, RSS, IA (heurística/OpenAI), Auth.js, SQLite e API para móvel/PWA.
 
-## O que está incluído
-
-- Landing com proposta de valor e pré-visualização do **Resumo Geral do Dia** (sem login)
-- Onboarding: escolha de sectores + preferência de notificações
-- Feed com filtros **Hora | Dia | Semana | Ano** e sectores do MVP
-- Vista por sector, detalhe de peça (resumo + fontes) e linha do tempo por tema
-- Pesquisa transversal e perfil (sectores, notificações, plano Freemium/Premium)
-- Preferências guardadas em `localStorage` (sem backend neste MVP)
-
-Sectores: Economia & Finanças, Política, Tecnologia, Energia & Recursos, Saúde.
-
-## Stack
-
-- Next.js (App Router) + TypeScript
-- Tailwind CSS + shadcn/ui
-- Dados de notícias mock (conteúdo editorial de demonstração)
-
-## Correr localmente
+## Arranque rápido
 
 ```bash
+cp .env.example .env   # se ainda não existir .env
 npm install
-npm run dev -- -p 43123
+npm run db:push
+npm run ingest         # opcional: RSS + seed
+npm run dev
 ```
 
 Abre [http://127.0.0.1:43123](http://127.0.0.1:43123).
+
+## Módulos
+
+| Pasta | Função |
+|-------|--------|
+| `src/lib/modules/rss` | Fontes e ingestão RSS |
+| `src/lib/modules/ai` | Classificação + resumo |
+| `src/lib/modules/auth` | Auth.js (email/Google/Apple) |
+| `src/lib/modules/pieces` | Repositório de peças |
+| `src/lib/modules/mobile` | Contrato API para app nativa |
+| `prisma/` | Schema SQLite |
+| `docs/PROGRESSO.md` | % de conclusão e testes |
+
+## Variáveis de ambiente
+
+Ver `.env.example`. Sem chaves OAuth/OpenAI a app corre na mesma (email local + IA heurística + seed mock).
 
 ## Scripts
 
 | Comando | Descrição |
 |---------|-----------|
-| `npm run dev` | Servidor de desenvolvimento |
+| `npm run dev` | Servidor em `:43123` |
+| `npm run ingest` | RSS + pipeline IA |
+| `npm run db:push` | Sincronizar schema Prisma |
 | `npm run build` | Build de produção |
-| `npm run start` | Servir build de produção |
-| `npm run lint` | ESLint |
-
-## Nota
-
-Este repositório materializa o documento de projecto Tricô (fase de construção de ideia). Ingestão RSS, LLM e autenticação real ficam para iterações seguintes — o MVP usa peças mock e preferências locais.

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { signOut, useSession } from "next-auth/react";
 import { AppHeader } from "@/components/trico/app-header";
 import { BottomNav } from "@/components/trico/bottom-nav";
 import { SectorPicker } from "@/components/trico/sector-picker";
@@ -12,6 +13,7 @@ import { cn } from "@/lib/utils";
 
 export default function PerfilPage() {
   const { prefs, setPrefs } = usePreferences();
+  const { data: session } = useSession();
 
   function setSectors(next: SectorId[]) {
     setPrefs({ ...prefs, sectors: next });
@@ -35,6 +37,32 @@ export default function PerfilPage() {
         <p className="mt-2 text-navy/65">
           Sectores, notificações e plano — o tear à tua medida.
         </p>
+
+        <section className="mt-6 rounded-2xl border border-navy/10 bg-white/55 p-4 text-sm">
+          {session?.user ? (
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p>
+                Sessão: <strong>{session.user.email}</strong>
+              </p>
+              <Button
+                variant="outline"
+                onClick={() => signOut({ callbackUrl: "/" })}
+              >
+                Terminar sessão
+              </Button>
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-navy/70">Modo local (sem conta na BD).</p>
+              <Link
+                href="/entrar"
+                className={cn(buttonVariants(), "bg-navy text-cream")}
+              >
+                Entrar / Registar
+              </Link>
+            </div>
+          )}
+        </section>
 
         <section className="mt-10">
           <h2 className="font-display text-xl font-semibold text-navy">

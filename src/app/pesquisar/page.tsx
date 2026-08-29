@@ -1,21 +1,43 @@
 "use client";
 
-import { Suspense, useMemo, useState } from "react";
+/**
+ * Pesquisa transversal via /api/pieces?q=
+ * Teste: escrever "kwanza" e ver resultados em tempo real.
+ */
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { AppHeader } from "@/components/trico/app-header";
 import { BottomNav } from "@/components/trico/bottom-nav";
 import { PieceGrid } from "@/components/trico/piece-card";
-import { filterPieces } from "@/lib/data";
+import type { Piece } from "@/lib/types";
 
 function SearchInner() {
   const searchParams = useSearchParams();
   const initial = searchParams.get("q") ?? "";
   const [query, setQuery] = useState(initial);
+  const [results, setResults] = useState<Piece[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  const results = useMemo(
-    () => (query.trim() ? filterPieces({ query }) : []),
-    [query],
-  );
+  useEffect(() => {
+    const q = query.trim();
+    if (!q) {
+      setResults([]);
+      return;
+    }
+    const handle = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/pieces?q=${encodeURIComponent(q)}`);
+        const data = await res.json();
+        setResults(data.pieces || []);
+      } catch {
+        setResults([]);
+      } finally {
+        setLoading(false);
+      }
+    }, 200);
+    return () => clearTimeout(handle);
+  }, [query]);
 
   return (
     <div className="flex min-h-full flex-col pb-24 md:pb-10">
@@ -41,8 +63,9 @@ function SearchInner() {
           {query.trim() ? (
             <>
               <p className="mb-3 text-sm text-navy/50">
-                {results.length} peça{results.length === 1 ? "" : "s"} encontrada
-                {results.length === 1 ? "" : "s"}
+                {loading
+                  ? "A procurar…"
+                  : `${results.length} peça${results.length === 1 ? "" : "s"} encontrada${results.length === 1 ? "" : "s"}`}
               </p>
               <PieceGrid pieces={results} />
             </>

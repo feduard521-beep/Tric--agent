@@ -1,6 +1,10 @@
 "use client";
 
-import { useMemo } from "react";
+/**
+ * Feed cliente — lê peças via /api/pieces (BD + fallback mock).
+ * Teste: abrir /feed?tempo=dia e confirmar grelha; correr npm run ingest.
+ */
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { AppHeader } from "@/components/trico/app-header";
@@ -9,9 +13,8 @@ import { PieceGrid } from "@/components/trico/piece-card";
 import { TimeFilter } from "@/components/trico/time-filter";
 import { usePreferences } from "@/components/trico/preferences-provider";
 import { SectorIcon } from "@/components/trico/sector-icon";
-import { filterPieces, getDailyDigest } from "@/lib/data";
 import { SECTORS } from "@/lib/sectors";
-import type { TimeWindow } from "@/lib/types";
+import type { Piece, TimeWindow } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 export default function FeedPage() {
@@ -20,19 +23,62 @@ export default function FeedPage() {
   const tempo = (searchParams.get("tempo") as TimeWindow) || "dia";
   const sectorParam = searchParams.get("sector");
 
-  const digest = useMemo(() => getDailyDigest(), []);
   const followed = prefs.sectors.length ? prefs.sectors : SECTORS.map((s) => s.id);
-
   const isPremium = prefs.plan === "premium";
   const yearLocked = tempo === "ano" && !isPremium;
 
-  const pieces = useMemo(() => {
-    if (yearLocked) return [];
-    if (sectorParam) {
-      return filterPieces({ sectorId: sectorParam, timeWindow: tempo });
+  const [pieces, setPieces] = useState<Piece[]>([]);
+  const [digest, setDigest] = useState<Piece[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const queryKey = useMemo(
+    () => `${tempo}|${sectorParam || "all"}|${followed.join(",")}|${yearLocked}`,
+    [tempo, sectorParam, followed, yearLocked],
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      setLoading(true);
+      setError(null);
+      try {
+        if (yearLocked) {
+          if (!cancelled) {
+            setPieces([]);
+            setDigest([]);
+          }
+          return;
+        }
+
+        const params = new URLSearchParams({ tempo });
+        if (sectorParam) params.set("sector", sectorParam);
+        const res = await fetch(`/api/pieces?${params.toString()}`);
+        const data = await res.json();
+        let list = (data.pieces || []) as Piece[];
+        if (!sectorParam) {
+          list = list.filter((p) => followed.includes(p.sectorId));
+        }
+
+        const digestRes = await fetch("/api/pieces?tempo=dia");
+        const digestData = await digestRes.json();
+        const digestList = ((digestData.pieces || []) as Piece[]).slice(0, 5);
+
+        if (!cancelled) {
+          setPieces(list);
+          setDigest(digestList);
+        }
+      } catch {
+        if (!cancelled) setError("Não foi possível carregar as peças.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     }
-    return filterPieces({ sectorIds: followed, timeWindow: tempo });
-  }, [followed, sectorParam, tempo, yearLocked]);
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [queryKey, yearLocked, tempo, sectorParam, followed]);
 
   return (
     <div className="flex min-h-full flex-col pb-24 md:pb-10">
@@ -49,7 +95,7 @@ export default function FeedPage() {
                 : "Resumo Geral do Dia"}
             </h1>
             <p className="mt-2 max-w-xl text-navy/65">
-              Peças agregadas por sector e período. Menos fios soltos, mais clareza.
+              Peças agregadas por sector e período — RSS + IA com fallback local.
             </p>
           </div>
           <TimeFilter value={tempo} basePath="/feed" />
@@ -89,7 +135,13 @@ export default function FeedPage() {
           })}
         </div>
 
-        {!sectorParam && tempo === "dia" ? (
+        {error ? (
+          <p className="mt-6 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </p>
+        ) : null}
+
+        {!sectorParam && tempo === "dia" && !yearLocked ? (
           <section className="mt-10 rounded-3xl border border-navy/10 bg-white/55 p-5 sm:p-7">
             <div className="mb-4 flex items-center justify-between gap-3">
               <h2 className="font-display text-2xl font-semibold text-navy">
@@ -99,7 +151,11 @@ export default function FeedPage() {
                 5 sectores
               </span>
             </div>
-            <PieceGrid pieces={digest} />
+            {loading ? (
+              <p className="text-navy/50">A tecer o resumo…</p>
+            ) : (
+              <PieceGrid pieces={digest} />
+            )}
           </section>
         ) : null}
 
@@ -128,6 +184,8 @@ export default function FeedPage() {
                 Ver planos no perfil
               </Link>
             </div>
+          ) : loading ? (
+            <p className="text-navy/50">A carregar peças…</p>
           ) : (
             <PieceGrid pieces={pieces} />
           )}

@@ -1,6 +1,7 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Fraunces, Manrope } from "next/font/google";
 import { PreferencesProvider } from "@/components/trico/preferences-provider";
+import { AuthSessionProvider } from "@/components/trico/auth-session-provider";
 import "./globals.css";
 
 const manrope = Manrope({
@@ -20,6 +21,18 @@ export const metadata: Metadata = {
   },
   description:
     "Plataforma angolana que agrega, filtra e resume as notícias do teu sector — por hora, dia, semana e ano.",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    title: "Tricô",
+    statusBarStyle: "default",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0d2744",
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -29,7 +42,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${manrope.variable} ${fraunces.variable} h-full`}
     >
       <body className="min-h-full flex flex-col font-sans">
-        <PreferencesProvider>{children}</PreferencesProvider>
+        <AuthSessionProvider>
+          <PreferencesProvider>{children}</PreferencesProvider>
+        </AuthSessionProvider>
       </body>
     </html>
   );

@@ -5,7 +5,7 @@ import { BottomNav } from "@/components/trico/bottom-nav";
 import { PieceGrid } from "@/components/trico/piece-card";
 import { SectorIcon } from "@/components/trico/sector-icon";
 import { TimeFilter } from "@/components/trico/time-filter";
-import { filterPieces } from "@/lib/data";
+import { listPieces } from "@/lib/modules/pieces/repository";
 import { getSector } from "@/lib/sectors";
 import type { TimeWindow } from "@/lib/types";
 
@@ -22,7 +22,7 @@ export default async function SectorPage({
   if (!sector) notFound();
 
   const tempo = ((tempoRaw as TimeWindow) || "dia") as TimeWindow;
-  const pieces = filterPieces({ sectorId: sector.id, timeWindow: tempo });
+  const pieces = await listPieces({ sectorId: sector.id, timeWindow: tempo });
 
   return (
     <div className="flex min-h-full flex-col pb-24 md:pb-10">

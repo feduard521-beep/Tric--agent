@@ -1,5 +1,9 @@
 "use client";
 
+/**
+ * Preferências: localStorage + sincronização opcional com /api/me/preferences
+ * quando o utilizador está autenticado.
+ */
 import {
   createContext,
   useCallback,
@@ -8,6 +12,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { useSession } from "next-auth/react";
 import {
   DEFAULT_PREFS,
   loadPreferences,
@@ -18,12 +23,15 @@ import type { UserPreferences } from "@/lib/types";
 type PrefsContextValue = {
   prefs: UserPreferences;
   ready: boolean;
-  setPrefs: (next: UserPreferences | ((p: UserPreferences) => UserPreferences)) => void;
+  setPrefs: (
+    next: UserPreferences | ((p: UserPreferences) => UserPreferences),
+  ) => void;
 };
 
 const PrefsContext = createContext<PrefsContextValue | null>(null);
 
 export function PreferencesProvider({ children }: { children: ReactNode }) {
+  const { status } = useSession();
   const [prefs, setPrefsState] = useState<UserPreferences>(DEFAULT_PREFS);
   const [ready, setReady] = useState(false);
 
@@ -39,15 +47,50 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  // Sincroniza a partir da BD se houver sessão
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/me/preferences");
+        if (!res.ok) return;
+        const data = await res.json();
+        if (cancelled) return;
+        const next: UserPreferences = {
+          sectors: data.sectors || [],
+          notifications: data.notifications || "app",
+          plan: data.plan || "gratuito",
+          onboarded: Boolean(data.onboarded),
+        };
+        savePreferences(next);
+        setPrefsState(next);
+      } catch {
+        /* mantém local */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [status]);
+
   const setPrefs = useCallback(
     (next: UserPreferences | ((p: UserPreferences) => UserPreferences)) => {
       setPrefsState((prev) => {
         const value = typeof next === "function" ? next(prev) : next;
         savePreferences(value);
+        // Fire-and-forget sync se autenticado
+        if (status === "authenticated") {
+          void fetch("/api/me/preferences", {
+            method: "PUT",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify(value),
+          });
+        }
         return value;
       });
     },
-    [],
+    [status],
   );
 
   return (
@@ -59,6 +102,8 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
 
 export function usePreferences() {
   const ctx = useContext(PrefsContext);
-  if (!ctx) throw new Error("usePreferences must be used within PreferencesProvider");
+  if (!ctx) {
+    throw new Error("usePreferences must be used within PreferencesProvider");
+  }
   return ctx;
 }
