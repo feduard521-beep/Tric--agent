@@ -12,7 +12,8 @@ Sem estas chaves, a ingestão corre só com RSS.
 
 ## Cron (Vercel)
 
-`vercel.json` agenda `GET/POST /api/ingest` **de hora a hora**.
+`vercel.json` agenda `GET/POST /api/ingest` **1× por dia às 06:00 UTC** (limite Hobby).
+Para hora a hora, é preciso plano Pro na Vercel.
 
 Define:
 - `CRON_SECRET` = string longa (Vercel Cron envia `Authorization: Bearer <CRON_SECRET>`)
