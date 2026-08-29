@@ -19,6 +19,7 @@ import {
   savePreferences,
 } from "@/lib/preferences";
 import type { UserPreferences } from "@/lib/types";
+import { clampSectorsForPlan } from "@/lib/modules/billing/plans";
 
 type PrefsContextValue = {
   prefs: UserPreferences;
@@ -77,14 +78,22 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
   const setPrefs = useCallback(
     (next: UserPreferences | ((p: UserPreferences) => UserPreferences)) => {
       setPrefsState((prev) => {
-        const value = typeof next === "function" ? next(prev) : next;
+        const raw = typeof next === "function" ? next(prev) : next;
+        const value: UserPreferences = {
+          ...raw,
+          sectors: clampSectorsForPlan(raw.sectors, raw.plan),
+        };
         savePreferences(value);
         // Fire-and-forget sync se autenticado
         if (status === "authenticated") {
           void fetch("/api/me/preferences", {
             method: "PUT",
             headers: { "content-type": "application/json" },
-            body: JSON.stringify(value),
+            body: JSON.stringify({
+              sectors: value.sectors,
+              notifications: value.notifications,
+              onboarded: value.onboarded,
+            }),
           });
         }
         return value;

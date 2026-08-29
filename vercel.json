@@ -1,5 +1,11 @@
 {
   "framework": "nextjs",
   "installCommand": "npm install",
-  "buildCommand": "prisma generate && node scripts/db-migrate.cjs && next build"
+  "buildCommand": "prisma generate && node scripts/db-migrate.cjs && next build",
+  "crons": [
+    {
+      "path": "/api/ingest",
+      "schedule": "0 * * * *"
+    }
+  ]
 }

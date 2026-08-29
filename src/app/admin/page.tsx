@@ -23,8 +23,19 @@ type AdminUser = {
   image: string | null;
 };
 
+type AdminPayment = {
+  id: string;
+  status: string;
+  amountKz: number;
+  reference: string | null;
+  createdAt: string;
+  user: { email: string; name: string | null };
+};
+
 type AdminPayload = {
   users: AdminUser[];
+  payments?: AdminPayment[];
+  providers?: { newsdata: boolean; gnews: boolean; newsapi: boolean };
   stats: {
     pieces?: number;
     articles?: number;
@@ -115,6 +126,46 @@ export default function AdminPage() {
     }
   }
 
+  async function confirmPayment(paymentId: string) {
+    setBusy(true);
+    try {
+      const res = await fetch("/api/admin", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: "confirmPayment", paymentId }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setMessage(json.error || "Falha ao confirmar pagamento.");
+      } else {
+        setMessage("Pagamento confirmado — Premium activado.");
+        await load();
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function grantPremium(userId: string) {
+    setBusy(true);
+    try {
+      const res = await fetch("/api/admin", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: "grantPremium", userId }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setMessage(json.error || "Falha ao atribuir Premium.");
+      } else {
+        setMessage(`${json.user.email} → premium`);
+        await load();
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
   if (status === "loading" || (status === "authenticated" && !data && !error)) {
     return (
       <div className="flex min-h-full flex-col pb-24">
@@ -164,13 +215,21 @@ export default function AdminPage() {
             disabled={busy}
             className="bg-terracotta text-white hover:bg-terracotta/90"
           >
-            {busy ? "A processar…" : "Correr ingestão RSS"}
+            {busy ? "A processar…" : "Correr ingestão (RSS + APIs)"}
           </Button>
         </div>
 
         {message ? (
           <p className="mt-4 rounded-lg border border-navy/10 bg-white/70 px-4 py-3 text-sm text-navy">
             {message}
+          </p>
+        ) : null}
+
+        {data?.providers ? (
+          <p className="mt-3 text-xs text-navy/50">
+            APIs: NewsData {data.providers.newsdata ? "✓" : "—"} · GNews{" "}
+            {data.providers.gnews ? "✓" : "—"} · NewsAPI{" "}
+            {data.providers.newsapi ? "✓" : "—"}
           </p>
         ) : null}
 
@@ -226,28 +285,91 @@ export default function AdminPage() {
                     <td className="px-4 py-3 text-navy/80">{u.role}</td>
                     <td className="px-4 py-3 text-navy/80">{u.plan}</td>
                     <td className="px-4 py-3">
-                      {u.role === "admin" ? (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={busy || u.email === session?.user?.email}
-                          onClick={() => void setRole(u.id, "user")}
-                        >
-                          Remover admin
-                        </Button>
-                      ) : (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={busy}
-                          onClick={() => void setRole(u.id, "admin")}
-                        >
-                          Tornar admin
-                        </Button>
-                      )}
+                      <div className="flex flex-wrap gap-2">
+                        {u.role === "admin" ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={busy || u.email === session?.user?.email}
+                            onClick={() => void setRole(u.id, "user")}
+                          >
+                            Remover admin
+                          </Button>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={busy}
+                            onClick={() => void setRole(u.id, "admin")}
+                          >
+                            Tornar admin
+                          </Button>
+                        )}
+                        {u.plan !== "premium" ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={busy}
+                            onClick={() => void grantPremium(u.id)}
+                          >
+                            Dar Premium
+                          </Button>
+                        ) : null}
+                      </div>
                     </td>
                   </tr>
                 ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section className="mt-10">
+          <h2 className="font-display text-xl font-semibold text-navy">
+            Pagamentos Premium
+          </h2>
+          <div className="mt-4 overflow-x-auto border border-line">
+            <table className="w-full min-w-[560px] text-left text-sm">
+              <thead className="border-b border-line text-navy/55">
+                <tr>
+                  <th className="px-4 py-3 font-medium">Utilizador</th>
+                  <th className="px-4 py-3 font-medium">Ref.</th>
+                  <th className="px-4 py-3 font-medium">Valor</th>
+                  <th className="px-4 py-3 font-medium">Estado</th>
+                  <th className="px-4 py-3 font-medium">Acção</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(data?.payments || []).length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-4 py-6 text-muted-foreground">
+                      Sem pedidos de pagamento.
+                    </td>
+                  </tr>
+                ) : (
+                  (data?.payments || []).map((p) => (
+                    <tr key={p.id} className="border-b border-line last:border-0">
+                      <td className="px-4 py-3">{p.user.email}</td>
+                      <td className="px-4 py-3 font-mono text-xs">{p.reference}</td>
+                      <td className="px-4 py-3">{p.amountKz} Kz</td>
+                      <td className="px-4 py-3 uppercase">{p.status}</td>
+                      <td className="px-4 py-3">
+                        {p.status === "pending" ? (
+                          <Button
+                            size="sm"
+                            disabled={busy}
+                            className="bg-navy text-white hover:bg-navy/90"
+                            onClick={() => void confirmPayment(p.id)}
+                          >
+                            Confirmar
+                          </Button>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>

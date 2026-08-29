@@ -21,11 +21,13 @@ model User {
   passwordHash  String?
   plan          String    @default("gratuito") // gratuito | premium
   role          String    @default("user") // user | admin
+  premiumUntil  DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   accounts      Account[]
   sessions      Session[]
   preferences   UserPreference?
+  payments      Payment[]
 }
 
 model Account {
@@ -148,4 +150,22 @@ model IngestRun {
   fetchedCount Int      @default(0)
   createdPieces Int     @default(0)
   message      String   @default("")
+}
+
+// --- Pagamentos Premium (2000 Kz) ---
+
+model Payment {
+  id          String    @id @default(cuid())
+  userId      String
+  amountKz    Int       @default(2000)
+  currency    String    @default("AOA")
+  status      String    @default("pending") // pending | confirmed | cancelled
+  method      String    @default("manual") // manual | multicaixa | transfer
+  reference   String?
+  note        String?
+  createdAt   DateTime  @default(now())
+  confirmedAt DateTime?
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
 }

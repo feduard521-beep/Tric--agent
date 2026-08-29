@@ -12,6 +12,7 @@ const NAV = [
   { href: "/feed", label: "Início" },
   { href: "/sectores", label: "Notícias" },
   { href: "/pesquisar", label: "Artigos" },
+  { href: "/premium", label: "Premium" },
   { href: "/perfil", label: "Perfil" },
 ];
 
