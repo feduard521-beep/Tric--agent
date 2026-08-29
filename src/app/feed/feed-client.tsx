@@ -16,6 +16,7 @@ import {
 import { SectionBar } from "@/components/trico/section-bar";
 import { TimeFilter } from "@/components/trico/time-filter";
 import { usePreferences } from "@/components/trico/preferences-provider";
+import { AdSlot } from "@/components/trico/ad-slot";
 import { SiteFooter } from "@/components/trico/site-footer";
 import { ScrollReveal } from "@/components/trico/scroll-reveal";
 import { SECTORS } from "@/lib/sectors";
@@ -144,6 +145,8 @@ export default function FeedPage() {
           </span>
         </div>
 
+        <AdSlot placement="feed-top" sectorId={sectorParam} className="mb-4" />
+
         {error ? (
           <p className="mb-4 border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
             {error}
@@ -207,8 +210,16 @@ export default function FeedPage() {
                     </ScrollReveal>
                   ))}
                 </ul>
+                <AdSlot
+                  placement="feed-sidebar"
+                  sectorId={sectorParam}
+                  compact
+                  className="mt-3"
+                />
               </aside>
             </section>
+
+            <AdSlot placement="feed-mid" className="mt-6" />
 
             {SECTORS.filter((s) => followedSectors.includes(s.id)).map((sector) => {
               const list = bySector.get(sector.id) || [];
@@ -226,6 +237,15 @@ export default function FeedPage() {
                       <PieceRow key={p.id} piece={p} delay={70 * i} />
                     ))}
                   </div>
+                  {sector.id === "tecnologia" ||
+                  sector.id === "energia" ||
+                  sector.id === "saude" ? (
+                    <AdSlot
+                      placement="feed-mid"
+                      sectorId={sector.id}
+                      className="mt-4"
+                    />
+                  ) : null}
                 </section>
               );
             })}

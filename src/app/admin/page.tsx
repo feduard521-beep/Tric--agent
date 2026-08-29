@@ -32,9 +32,21 @@ type AdminPayment = {
   user: { email: string; name: string | null };
 };
 
+type AdminAd = {
+  id: string;
+  partnerName: string;
+  headline: string;
+  placement: string;
+  sectorId: string | null;
+  active: boolean;
+  impressions: number;
+  clicks: number;
+};
+
 type AdminPayload = {
   users: AdminUser[];
   payments?: AdminPayment[];
+  ads?: AdminAd[];
   providers?: { newsdata: boolean; gnews: boolean; newsapi: boolean };
   stats: {
     pieces?: number;
@@ -159,6 +171,46 @@ export default function AdminPage() {
         setMessage(json.error || "Falha ao atribuir Premium.");
       } else {
         setMessage(`${json.user.email} → premium`);
+        await load();
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function toggleAd(adId: string, active: boolean) {
+    setBusy(true);
+    try {
+      const res = await fetch("/api/admin", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: "toggleAd", adId, active }),
+      });
+      const json = await res.json();
+      if (!res.ok) setMessage(json.error || "Falha ao actualizar anúncio.");
+      else {
+        setMessage(
+          `${json.ad.partnerName} → ${json.ad.active ? "activo" : "pausado"}`,
+        );
+        await load();
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function seedAds() {
+    setBusy(true);
+    try {
+      const res = await fetch("/api/admin", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: "seedAds" }),
+      });
+      const json = await res.json();
+      if (!res.ok) setMessage(json.error || "Falha ao carregar exemplos.");
+      else {
+        setMessage(`${(json.ads || []).length} campanhas de exemplo activas.`);
         await load();
       }
     } finally {
@@ -319,6 +371,75 @@ export default function AdminPage() {
                     </td>
                   </tr>
                 ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section className="mt-10">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h2 className="font-display text-xl font-semibold text-navy">
+                Publicidade de parceiros
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Campanhas com rótulo «Publicidade». Premium não vê anúncios.
+              </p>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={busy}
+              onClick={() => void seedAds()}
+            >
+              Restaurar exemplos
+            </Button>
+          </div>
+          <div className="mt-4 overflow-x-auto border border-line">
+            <table className="w-full min-w-[640px] text-left text-sm">
+              <thead className="border-b border-line text-navy/55">
+                <tr>
+                  <th className="px-4 py-3 font-medium">Parceiro</th>
+                  <th className="px-4 py-3 font-medium">Slot</th>
+                  <th className="px-4 py-3 font-medium">Sector</th>
+                  <th className="px-4 py-3 font-medium">Imp / Cliques</th>
+                  <th className="px-4 py-3 font-medium">Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(data?.ads || []).length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-4 py-6 text-muted-foreground">
+                      Sem campanhas — usa «Restaurar exemplos».
+                    </td>
+                  </tr>
+                ) : (
+                  (data?.ads || []).map((ad) => (
+                    <tr key={ad.id} className="border-b border-line last:border-0">
+                      <td className="px-4 py-3">
+                        <div className="font-medium text-navy">{ad.partnerName}</div>
+                        <div className="line-clamp-1 text-xs text-muted-foreground">
+                          {ad.headline}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 font-mono text-xs">{ad.placement}</td>
+                      <td className="px-4 py-3">{ad.sectorId || "todos"}</td>
+                      <td className="px-4 py-3">
+                        {ad.impressions} / {ad.clicks}
+                      </td>
+                      <td className="px-4 py-3">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={busy || ad.id.startsWith("example-ad-")}
+                          onClick={() => void toggleAd(ad.id, !ad.active)}
+                        >
+                          {ad.active ? "Pausar" : "Activar"}
+                        </Button>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>

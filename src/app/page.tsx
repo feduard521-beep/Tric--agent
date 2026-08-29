@@ -5,6 +5,7 @@ import { PieceFeature, PieceRow } from "@/components/trico/piece-card";
 import { SectionBar } from "@/components/trico/section-bar";
 import { SiteFooter } from "@/components/trico/site-footer";
 import { ScrollReveal } from "@/components/trico/scroll-reveal";
+import { AdSlot } from "@/components/trico/ad-slot";
 import { buttonVariants } from "@/components/ui/button";
 import { getDailyDigestPieces } from "@/lib/modules/pieces/repository";
 import { SECTORS } from "@/lib/sectors";
@@ -106,6 +107,8 @@ export default async function LandingPage() {
             </div>
           </aside>
         </section>
+
+        <AdSlot placement="landing-mid" sectorId="economia" className="mt-8" />
 
         <section className="mt-10">
           <ScrollReveal variant="down" duration={700}>

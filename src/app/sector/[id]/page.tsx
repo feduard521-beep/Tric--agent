@@ -6,6 +6,7 @@ import { PieceGrid } from "@/components/trico/piece-card";
 import { SectorIcon } from "@/components/trico/sector-icon";
 import { TimeFilter } from "@/components/trico/time-filter";
 import { ScrollReveal } from "@/components/trico/scroll-reveal";
+import { AdSlot } from "@/components/trico/ad-slot";
 import { listPieces } from "@/lib/modules/pieces/repository";
 import { getSector } from "@/lib/sectors";
 import type { TimeWindow } from "@/lib/types";
@@ -46,6 +47,9 @@ export default async function SectorPage({
             <TimeFilter value={tempo} basePath={`/sector/${sector.id}`} />
           </div>
         </ScrollReveal>
+
+        <AdSlot placement="sector-top" sectorId={sector.id} className="mt-6" />
+        <AdSlot placement="feed-mid" sectorId={sector.id} className="mt-3" />
 
         <div className="mt-10">
           <PieceGrid pieces={pieces} />

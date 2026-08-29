@@ -169,3 +169,30 @@ model Payment {
 
   @@index([userId, status])
 }
+
+// --- Publicidade de parceiros ---
+
+model AdCampaign {
+  id           String    @id @default(cuid())
+  partnerName  String
+  headline     String
+  body         String    @default("")
+  ctaLabel     String    @default("Saber mais")
+  targetUrl    String
+  // feed-top | feed-mid | feed-sidebar | landing-mid | piece-bottom | sector-top
+  placement    String
+  // null = todos; senão sector id (economia, saude, ...)
+  sectorId     String?
+  active       Boolean   @default(true)
+  priority     Int       @default(0)
+  startsAt     DateTime  @default(now())
+  endsAt       DateTime?
+  impressions  Int       @default(0)
+  clicks       Int       @default(0)
+  accent       String    @default("navy") // navy | terracotta | teal | emerald
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([active, placement, sectorId])
+  @@index([startsAt, endsAt])
+}

@@ -30,7 +30,8 @@ export async function GET() {
     );
   }
 
-  const [users, pieceStats, lastIngest, feedCount, payments] = await Promise.all([
+  const [users, pieceStats, lastIngest, feedCount, payments, ads] =
+    await Promise.all([
     prisma.user.findMany({
       orderBy: { createdAt: "desc" },
       take: 100,
@@ -53,11 +54,19 @@ export async function GET() {
       take: 50,
       include: { user: { select: { email: true, name: true } } },
     }),
+    (async () => {
+      const { listAllAdsAdmin, ensureExampleAds } = await import(
+        "@/lib/modules/ads/repository"
+      );
+      await ensureExampleAds().catch(() => undefined);
+      return listAllAdsAdmin();
+    })(),
   ]);
 
   return NextResponse.json({
     users,
     payments,
+    ads,
     providers: getActiveNewsProviders(),
     stats: {
       ...pieceStats,
@@ -86,6 +95,8 @@ export async function POST(req: Request) {
     userId?: string;
     role?: string;
     paymentId?: string;
+    adId?: string;
+    active?: boolean;
   } = {};
   try {
     body = await req.json();
@@ -141,6 +152,27 @@ export async function POST(req: Request) {
       select: { id: true, email: true, plan: true, premiumUntil: true },
     });
     return NextResponse.json({ user });
+  }
+
+  if (body.action === "toggleAd" && body.adId) {
+    const ad = await prisma.adCampaign.findUnique({ where: { id: body.adId } });
+    if (!ad) {
+      return NextResponse.json({ error: "Anúncio não encontrado." }, { status: 404 });
+    }
+    const updated = await prisma.adCampaign.update({
+      where: { id: body.adId },
+      data: { active: typeof body.active === "boolean" ? body.active : !ad.active },
+    });
+    return NextResponse.json({ ad: updated });
+  }
+
+  if (body.action === "seedAds") {
+    const { ensureExampleAds, listAllAdsAdmin } = await import(
+      "@/lib/modules/ads/repository"
+    );
+    await prisma.adCampaign.deleteMany({});
+    await ensureExampleAds();
+    return NextResponse.json({ ads: await listAllAdsAdmin() });
   }
 
   return NextResponse.json({ error: "Acção desconhecida." }, { status: 400 });

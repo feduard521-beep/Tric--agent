@@ -14,6 +14,7 @@ import { getSector } from "@/lib/sectors";
 import { formatClock } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { safeHttpUrl } from "@/lib/security/urls";
+import { AdSlot } from "@/components/trico/ad-slot";
 
 export default async function PiecePage({
   params,
@@ -96,6 +97,12 @@ export default async function PiecePage({
               })}
             </ul>
           </section>
+
+          <AdSlot
+            placement="piece-bottom"
+            sectorId={piece.sectorId}
+            className="mt-8"
+          />
 
           <div className="mt-8">
             <Link
