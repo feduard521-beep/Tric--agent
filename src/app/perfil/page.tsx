@@ -41,15 +41,32 @@ export default function PerfilPage() {
         <section className="mt-6 rounded-2xl border border-navy/10 bg-white/55 p-4 text-sm">
           {session?.user ? (
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <p>
-                Sessão: <strong>{session.user.email}</strong>
-              </p>
-              <Button
-                variant="outline"
-                onClick={() => signOut({ callbackUrl: "/" })}
-              >
-                Terminar sessão
-              </Button>
+              <div>
+                <p>
+                  Sessão: <strong>{session.user.email}</strong>
+                </p>
+                {session.user.role === "admin" ? (
+                  <p className="mt-1 text-xs text-terracotta">
+                    Conta administrador
+                  </p>
+                ) : null}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {session.user.role === "admin" ? (
+                  <Link
+                    href="/admin"
+                    className={cn(buttonVariants(), "bg-terracotta text-white hover:bg-terracotta/90")}
+                  >
+                    Abrir Admin
+                  </Link>
+                ) : null}
+                <Button
+                  variant="outline"
+                  onClick={() => signOut({ callbackUrl: "/" })}
+                >
+                  Terminar sessão
+                </Button>
+              </div>
             </div>
           ) : (
             <div className="flex flex-wrap items-center justify-between gap-3">

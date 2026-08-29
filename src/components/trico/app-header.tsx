@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Search } from "lucide-react";
+import { useSession } from "next-auth/react";
 import { Logo } from "./logo";
 import { cn } from "@/lib/utils";
 
-const LINKS = [
+const BASE_LINKS = [
   { href: "/feed", label: "Início" },
   { href: "/sectores", label: "Sectores" },
   { href: "/pesquisar", label: "Pesquisar" },
@@ -16,6 +17,16 @@ const LINKS = [
 
 export function AppHeader({ solid = false }: { solid?: boolean }) {
   const pathname = usePathname();
+  const { data: session } = useSession();
+  const links =
+    session?.user?.role === "admin"
+      ? [
+          ...BASE_LINKS.slice(0, 4),
+          { href: "/admin", label: "Admin" },
+          BASE_LINKS[4],
+        ]
+      : BASE_LINKS;
+
   return (
     <header
       className={cn(
@@ -26,7 +37,7 @@ export function AppHeader({ solid = false }: { solid?: boolean }) {
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
         <Logo withTagline={false} href="/feed" />
         <nav className="hidden items-center gap-1 md:flex" aria-label="Principal">
-          {LINKS.map((link) => {
+          {links.map((link) => {
             const active =
               pathname === link.href || pathname.startsWith(link.href + "/");
             return (

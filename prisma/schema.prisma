@@ -20,6 +20,7 @@ model User {
   image         String?
   passwordHash  String?
   plan          String    @default("gratuito") // gratuito | premium
+  role          String    @default("user") // user | admin
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   accounts      Account[]

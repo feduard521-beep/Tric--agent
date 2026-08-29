@@ -79,7 +79,7 @@ export function AuthForm({
         {title}
       </h1>
       <p className="mt-2 text-center text-sm text-navy/65">
-        Email sempre disponível. Google/Apple activam-se com variáveis de ambiente.
+        Email ou Google — a mesma conta liga-se automaticamente pelo email.
       </p>
 
       <form onSubmit={onSubmit} className="mt-8 space-y-4">
@@ -143,7 +143,11 @@ export function AuthForm({
           >
             Continuar com Google
           </button>
-        ) : null}
+        ) : (
+          <p className="rounded-lg border border-dashed border-navy/15 px-3 py-2 text-center text-xs text-navy/45">
+            Google em configuração — o botão aparece após AUTH_GOOGLE_ID / SECRET.
+          </p>
+        )}
         {appleEnabled ? (
           <button
             type="button"
