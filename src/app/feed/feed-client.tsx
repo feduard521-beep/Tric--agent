@@ -28,7 +28,12 @@ export default function FeedPage() {
   const tempo = (searchParams.get("tempo") as TimeWindow) || "dia";
   const sectorParam = searchParams.get("sector") as SectorId | null;
 
-  const followed = prefs.sectors.length ? prefs.sectors : SECTORS.map((s) => s.id);
+  const validSectorIds = useMemo(() => SECTORS.map((s) => s.id), []);
+  const followedSectors = useMemo(() => {
+    const followedRaw = prefs.sectors.length ? prefs.sectors : validSectorIds;
+    const followed = followedRaw.filter((id) => validSectorIds.includes(id));
+    return followed.length ? followed : validSectorIds;
+  }, [prefs.sectors, validSectorIds]);
   const isPremium = prefs.plan === "premium";
   const yearLocked = tempo === "ano" && !isPremium;
 
@@ -37,8 +42,9 @@ export default function FeedPage() {
   const [error, setError] = useState<string | null>(null);
 
   const queryKey = useMemo(
-    () => `${tempo}|${sectorParam || "all"}|${followed.join(",")}|${yearLocked}`,
-    [tempo, sectorParam, followed, yearLocked],
+    () =>
+      `${tempo}|${sectorParam || "all"}|${followedSectors.join(",")}|${yearLocked}`,
+    [tempo, sectorParam, followedSectors, yearLocked],
   );
 
   useEffect(() => {
@@ -57,7 +63,7 @@ export default function FeedPage() {
         const data = await res.json();
         let list = (data.pieces || []) as Piece[];
         if (!sectorParam) {
-          list = list.filter((p) => followed.includes(p.sectorId));
+          list = list.filter((p) => followedSectors.includes(p.sectorId));
         }
         if (!cancelled) setPieces(list);
       } catch {
@@ -70,7 +76,7 @@ export default function FeedPage() {
     return () => {
       cancelled = true;
     };
-  }, [queryKey, yearLocked, tempo, sectorParam, followed]);
+  }, [queryKey, yearLocked, tempo, sectorParam, followedSectors]);
 
   const bySector = useMemo(() => {
     const map = new Map<SectorId, Piece[]>();
@@ -194,7 +200,7 @@ export default function FeedPage() {
               </aside>
             </section>
 
-            {SECTORS.filter((s) => followed.includes(s.id)).map((sector) => {
+            {SECTORS.filter((s) => followedSectors.includes(s.id)).map((sector) => {
               const list = bySector.get(sector.id) || [];
               if (list.length === 0) return null;
               return (
