@@ -43,28 +43,13 @@ export default function PerfilPage() {
                 <p>
                   Sessão: <strong>{session.user.email}</strong>
                 </p>
-                {session.user.role === "admin" ? (
-                  <p className="mt-1 text-xs text-terracotta">
-                    Conta administrador
-                  </p>
-                ) : null}
               </div>
-              <div className="flex flex-wrap gap-2">
-                {session.user.role === "admin" ? (
-                  <Link
-                    href="/admin"
-                    className={cn(buttonVariants(), "bg-terracotta text-white hover:bg-terracotta/90")}
-                  >
-                    Abrir Admin
-                  </Link>
-                ) : null}
-                <Button
-                  variant="outline"
-                  onClick={() => signOut({ callbackUrl: "/" })}
-                >
-                  Terminar sessão
-                </Button>
-              </div>
+              <Button
+                variant="outline"
+                onClick={() => signOut({ callbackUrl: "/" })}
+              >
+                Terminar sessão
+              </Button>
             </div>
           ) : (
             <div className="flex flex-wrap items-center justify-between gap-3">

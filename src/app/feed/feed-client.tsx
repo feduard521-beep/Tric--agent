@@ -143,10 +143,10 @@ export default function FeedPage() {
               A retrospectiva anual dos teus sectores. Disponível no plano Premium.
             </p>
             <Link
-              href="/perfil"
+              href="/premium"
               className="mt-5 inline-flex h-10 items-center bg-terracotta px-4 text-sm font-bold text-white hover:bg-terracotta/90"
             >
-              Ver planos
+              Ver Premium · 2000 Kz
             </Link>
           </div>
         ) : loading ? (

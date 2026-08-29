@@ -6,13 +6,13 @@ import { FormEvent, useState } from "react";
 import { Search, UserRound } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { Logo } from "./logo";
+import { usePreferences } from "./preferences-provider";
 import { cn } from "@/lib/utils";
 
 const NAV = [
   { href: "/feed", label: "Início" },
   { href: "/sectores", label: "Notícias" },
   { href: "/pesquisar", label: "Artigos" },
-  { href: "/premium", label: "Premium" },
   { href: "/perfil", label: "Perfil" },
 ];
 
@@ -20,12 +20,9 @@ export function AppHeader({ solid = false }: { solid?: boolean }) {
   const pathname = usePathname();
   const router = useRouter();
   const { data: session } = useSession();
+  const { prefs } = usePreferences();
   const [q, setQ] = useState("");
-  const isAdmin = session?.user?.role === "admin";
-
-  const links = isAdmin
-    ? [...NAV, { href: "/admin", label: "Admin" }]
-    : NAV;
+  const showPremiumCta = prefs.plan !== "premium";
 
   function onSearch(e: FormEvent) {
     e.preventDefault();
@@ -35,7 +32,6 @@ export function AppHeader({ solid = false }: { solid?: boolean }) {
 
   return (
     <header className={cn("border-b border-line bg-white", solid && "sticky top-0 z-30")}>
-      {/* Brand strip */}
       <div className="border-b border-line bg-navy text-white">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-2 text-[11px] sm:px-6">
           <p className="truncate font-medium tracking-wide">
@@ -47,11 +43,11 @@ export function AppHeader({ solid = false }: { solid?: boolean }) {
         </div>
       </div>
 
-      <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-4 px-4 py-3 sm:px-6">
+      <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-3 px-4 py-3 sm:gap-4 sm:px-6">
         <Logo href="/feed" size="sm" />
         <form
           onSubmit={onSearch}
-          className="order-3 flex w-full flex-1 items-stretch sm:order-none sm:min-w-[220px] md:max-w-md"
+          className="order-3 flex w-full flex-1 items-stretch sm:order-none sm:min-w-[200px] md:max-w-md"
         >
           <input
             value={q}
@@ -67,18 +63,29 @@ export function AppHeader({ solid = false }: { solid?: boolean }) {
             <Search className="h-4 w-4" />
           </button>
         </form>
-        <Link
-          href={session?.user ? "/perfil" : "/entrar"}
-          className="ml-auto inline-flex size-9 items-center justify-center border border-line text-navy hover:bg-navy hover:text-white"
-          aria-label="Conta"
-        >
-          <UserRound className="h-4 w-4" />
-        </Link>
+
+        <div className="ml-auto flex items-center gap-2">
+          {showPremiumCta ? (
+            <Link
+              href="/premium"
+              className="inline-flex h-9 items-center bg-terracotta px-3 text-xs font-bold uppercase tracking-wide text-white hover:bg-terracotta/90 sm:px-4"
+            >
+              Premium · 2000 Kz
+            </Link>
+          ) : null}
+          <Link
+            href={session?.user ? "/perfil" : "/entrar"}
+            className="inline-flex size-9 items-center justify-center border border-line text-navy hover:bg-navy hover:text-white"
+            aria-label="Conta"
+          >
+            <UserRound className="h-4 w-4" />
+          </Link>
+        </div>
       </div>
 
       <nav className="border-t border-line bg-white" aria-label="Principal">
         <div className="mx-auto flex max-w-7xl items-center gap-1 overflow-x-auto px-2 sm:px-4">
-          {links.map((link) => {
+          {NAV.map((link) => {
             const active =
               pathname === link.href || pathname.startsWith(link.href + "/");
             return (
