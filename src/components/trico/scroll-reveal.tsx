@@ -13,7 +13,7 @@ export function ScrollReveal({
   children,
   variant = "up",
   delay = 0,
-  duration = 700,
+  duration = 800,
   className,
   once = true,
   threshold = 0.12,
