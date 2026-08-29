@@ -7,9 +7,9 @@ Relatório alinhado com `Trico_Projecto_Completo.docx`.
 | UI MVP (landing, feed, onboarding, perfil) | Feito | **95%** | Falta polish visual fino e analytics |
 | Ingestão RSS | Feito | **85%** | Feeds Google News Angola; falhas de rede não derrubam o processo |
 | IA classificação + resumo | Feito | **70%** | Heurística local por omissão; OpenAI se `OPENAI_API_KEY` |
-| Login real (email) | Feito | **90%** | Credentials + registo; sessão JWT |
+| Login real (email) | Feito | **95%** | Credentials + registo; activo com DATABASE_URL |
 | Login Google / Apple | Preparado | **40%** | Botões aparecem só com env; falta validação OAuth em prod |
-| Base de dados | Feito | **85%** | SQLite + Prisma 7 local; Postgres previsto para prod |
+| Base de dados | Feito (Postgres) | **90%** | Prisma + pg; Neon/Vercel Postgres; mock se sem URL |
 | API móvel / PWA | Feito | **60%** | Manifest PWA + contrato `/api/*`; app nativa ainda não |
 | Emails / retenção | Pendente | **10%** | Preferência existe; envio real não |
 | Scraping / workers cloud | Pendente | **5%** | Fora do âmbito RSS MVP |

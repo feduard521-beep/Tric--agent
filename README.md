@@ -7,14 +7,17 @@ MVP web + backend local da plataforma Tricô (Angola): UI, RSS, IA (heurística/
 ## Arranque rápido
 
 ```bash
-cp .env.example .env   # se ainda não existir .env
+cp .env.example .env   # define DATABASE_URL Postgres (Neon)
 npm install
-npm run db:push
+npx prisma migrate deploy
 npm run ingest         # opcional: RSS + seed
 npm run dev
 ```
 
 Abre [http://127.0.0.1:43123](http://127.0.0.1:43123).
+
+Produção: [https://tric-agent.vercel.app](https://tric-agent.vercel.app)  
+Guia Postgres + Auth: [`docs/POSTGRES_AUTH.md`](docs/POSTGRES_AUTH.md)
 
 ## Módulos
 
@@ -25,12 +28,14 @@ Abre [http://127.0.0.1:43123](http://127.0.0.1:43123).
 | `src/lib/modules/auth` | Auth.js (email/Google/Apple) |
 | `src/lib/modules/pieces` | Repositório de peças |
 | `src/lib/modules/mobile` | Contrato API para app nativa |
-| `prisma/` | Schema SQLite |
+| `prisma/` | Schema + migrations PostgreSQL |
 | `docs/PROGRESSO.md` | % de conclusão e testes |
+| `docs/POSTGRES_AUTH.md` | Deploy Neon/Vercel + env vars |
 
 ## Variáveis de ambiente
 
-Ver `.env.example`. Sem chaves OAuth/OpenAI a app corre na mesma (email local + IA heurística + seed mock).
+Ver `.env.example` e `docs/POSTGRES_AUTH.md`.  
+Sem `DATABASE_URL` Postgres a app corre em modo mock. Com URL, auth e peças usam a BD.
 
 ## Scripts
 

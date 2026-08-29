@@ -1,5 +1,5 @@
-// Schema Prisma da Tricô (SQLite local para o MVP).
-// Em produção, migrar o provider para PostgreSQL mantendo os mesmos modelos.
+// Schema Prisma da Tricô — PostgreSQL (Neon / Vercel Postgres / local).
+// Modelos: User/Account/Session (Auth.js), preferências, RSS, peças (resumos).
 
 generator client {
   provider = "prisma-client"
@@ -7,7 +7,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
 }
 
 // --- Auth.js / NextAuth ---
