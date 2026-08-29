@@ -2,10 +2,11 @@
 
 /**
  * Formulário de entrada / registo (Credentials + OAuth opcional).
+ * Com Resend: registo pede confirmação por email antes do login.
  */
 import { useMemo, useState } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Logo } from "@/components/trico/logo";
 import { buttonVariants } from "@/components/ui/button";
@@ -16,17 +17,28 @@ type Mode = "entrar" | "registar";
 export function AuthForm({
   googleEnabled,
   appleEnabled,
+  emailEnabled,
 }: {
   googleEnabled: boolean;
   appleEnabled: boolean;
+  emailEnabled: boolean;
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [mode, setMode] = useState<Mode>("entrar");
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(searchParams.get("email") || "");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(
+    searchParams.get("error"),
+  );
+  const [info, setInfo] = useState<string | null>(
+    searchParams.get("verified") === "1"
+      ? "Email confirmado. Já podes entrar."
+      : null,
+  );
   const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
 
   const title = useMemo(
     () => (mode === "entrar" ? "Entrar na Tricô" : "Criar conta"),
@@ -36,6 +48,7 @@ export function AuthForm({
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setInfo(null);
     setLoading(true);
     try {
       if (mode === "registar") {
@@ -49,6 +62,15 @@ export function AuthForm({
           setError(data.error || "Falha no registo.");
           return;
         }
+        if (data.requiresVerification) {
+          setInfo(
+            data.message ||
+              "Enviámos um email de confirmação. Abre o link e depois entra.",
+          );
+          setMode("entrar");
+          return;
+        }
+        if (data.message) setInfo(data.message);
       }
 
       const result = await signIn("credentials", {
@@ -57,6 +79,13 @@ export function AuthForm({
         redirect: false,
       });
       if (result?.error) {
+        const code = (result as { code?: string }).code;
+        if (code === "email_not_verified" || result.error.includes("email")) {
+          setError(
+            "Confirma o email antes de entrar. Verifica a caixa de entrada ou reenvia o link.",
+          );
+          return;
+        }
         setError("Email ou palavra-passe incorrectos.");
         return;
       }
@@ -69,6 +98,32 @@ export function AuthForm({
     }
   }
 
+  async function resendVerification() {
+    if (!email.trim()) {
+      setError("Indica o email para reenviar a confirmação.");
+      return;
+    }
+    setResending(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/auth/resend-verification", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Não foi possível reenviar.");
+        return;
+      }
+      setInfo(data.message || "Se a conta existir, enviámos um novo link.");
+    } catch {
+      setError("Erro de rede ao reenviar.");
+    } finally {
+      setResending(false);
+    }
+  }
+
   return (
     <div className="mx-auto flex min-h-full w-full max-w-md flex-col px-4 py-10 sm:px-6">
       <div className="mb-8 flex justify-center">
@@ -78,7 +133,9 @@ export function AuthForm({
         {title}
       </h1>
       <p className="mt-2 text-center text-sm text-navy/65">
-        Email ou Google — a mesma conta liga-se automaticamente pelo email.
+        {emailEnabled
+          ? "No registo por email enviamos um link de confirmação."
+          : "Email ou Google — define RESEND_API_KEY para activar confirmação por email."}
       </p>
 
       <form onSubmit={onSubmit} className="mt-8 space-y-4">
@@ -120,6 +177,11 @@ export function AuthForm({
         {error ? (
           <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
         ) : null}
+        {info ? (
+          <p className="rounded-lg border border-navy/15 bg-secondary px-3 py-2 text-sm text-navy">
+            {info}
+          </p>
+        ) : null}
 
         <button
           type="submit"
@@ -132,6 +194,17 @@ export function AuthForm({
           {loading ? "A processar…" : mode === "entrar" ? "Entrar" : "Registar"}
         </button>
       </form>
+
+      {emailEnabled ? (
+        <button
+          type="button"
+          disabled={resending}
+          onClick={() => void resendVerification()}
+          className="mt-3 text-center text-sm font-medium text-navy underline-offset-4 hover:underline"
+        >
+          {resending ? "A reenviar…" : "Reenviar email de confirmação"}
+        </button>
+      ) : null}
 
       <div className="mt-4 space-y-2">
         {googleEnabled ? (
@@ -164,6 +237,7 @@ export function AuthForm({
         onClick={() => {
           setMode(mode === "entrar" ? "registar" : "entrar");
           setError(null);
+          setInfo(null);
         }}
       >
         {mode === "entrar" ? "Criar conta nova" : "Já tenho conta — entrar"}

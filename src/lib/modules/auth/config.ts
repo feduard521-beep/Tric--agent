@@ -14,7 +14,13 @@ import { prisma } from "@/lib/db";
 import { ensureAdminRole, isAdminEmail } from "@/lib/modules/auth/roles";
 import { requireAuthSecret } from "@/lib/security/secrets";
 import { clientIp, rateLimit } from "@/lib/security/rate-limit";
+import { isEmailConfigured } from "@/lib/modules/auth/verification";
 import type { NextAuthConfig } from "next-auth";
+import { CredentialsSignin } from "next-auth";
+
+class EmailNotVerifiedError extends CredentialsSignin {
+  code = "email_not_verified";
+}
 
 function socialProviders() {
   const providers = [];
@@ -69,8 +75,23 @@ export const authConfig: NextAuthConfig = {
         const ok = await bcrypt.compare(password, user.passwordHash);
         if (!ok) return null;
 
+        // Com Resend activo, Credentials exige email confirmado
+        if (isEmailConfigured() && !user.emailVerified) {
+          const pending = await prisma.verificationToken.findFirst({
+            where: { identifier: email },
+          });
+          if (pending) {
+            throw new EmailNotVerifiedError();
+          }
+          // Conta anterior ao fluxo de email — confirma na primeira entrada
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { emailVerified: new Date() },
+          });
+        }
+
         await ensureAdminRole(user.id, user.email, {
-          emailVerified: user.emailVerified,
+          emailVerified: user.emailVerified || new Date(),
         });
 
         const refreshed = await prisma.user.findUnique({ where: { id: user.id } });
@@ -143,5 +164,6 @@ export function getAuthFlags() {
     apple: Boolean(process.env.AUTH_APPLE_ID && process.env.AUTH_APPLE_SECRET),
     credentials: Boolean(prisma),
     database: Boolean(prisma),
+    email: isEmailConfigured(),
   };
 }

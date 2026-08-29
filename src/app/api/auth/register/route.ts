@@ -1,12 +1,16 @@
 /**
  * Registo local por email + palavra-passe.
- * Rate limit por IP; resposta genérica para não enumerar emails.
+ * Com RESEND_API_KEY: envia confirmação e não faz login até verificar.
  */
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { clientIp, rateLimit } from "@/lib/security/rate-limit";
+import {
+  isEmailConfigured,
+  issueEmailVerification,
+} from "@/lib/modules/auth/verification";
 
 const schema = z.object({
   email: z.string().email(),
@@ -50,7 +54,6 @@ export async function POST(req: Request) {
     const email = parsed.data.email.trim().toLowerCase();
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
-      // Resposta genérica — evita enumeração de emails
       return NextResponse.json(
         {
           error:
@@ -60,12 +63,14 @@ export async function POST(req: Request) {
       );
     }
 
+    const name = parsed.data.name || email.split("@")[0];
     const passwordHash = await bcrypt.hash(parsed.data.password, 10);
     const user = await prisma.user.create({
       data: {
         email,
-        name: parsed.data.name || email.split("@")[0],
+        name,
         passwordHash,
+        emailVerified: null,
         preferences: {
           create: {
             sectorsJson: "[]",
@@ -77,7 +82,30 @@ export async function POST(req: Request) {
       select: { id: true, email: true, name: true },
     });
 
-    return NextResponse.json({ user }, { status: 201 });
+    const verification = await issueEmailVerification({
+      email,
+      name: user.name || name,
+    });
+
+    const emailRequired = isEmailConfigured();
+
+    return NextResponse.json(
+      {
+        user,
+        requiresVerification: emailRequired,
+        emailSent: verification.emailSent,
+        message: emailRequired
+          ? verification.emailSent
+            ? "Conta criada. Verifica o email para confirmares o endereço e depois entra."
+            : "Conta criada, mas o email de confirmação falhou. Usa «Reenviar confirmação» em Entrar."
+          : "Conta criada. (Email de confirmação desactivo — define RESEND_API_KEY na Vercel.)",
+        // Só em dev sem Resend: ajuda a testar o link
+        ...(verification.verifyUrl && !emailRequired
+          ? { devVerifyUrl: verification.verifyUrl }
+          : {}),
+      },
+      { status: 201 },
+    );
   } catch (err) {
     console.error("[auth/register]", err);
     return NextResponse.json({ error: "Falha no registo." }, { status: 500 });
