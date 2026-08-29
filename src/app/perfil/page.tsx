@@ -11,7 +11,7 @@ import type { NotificationPref, SectorId } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 export default function PerfilPage() {
-  const { prefs, setPrefs, ready } = usePreferences();
+  const { prefs, setPrefs } = usePreferences();
 
   function setSectors(next: SectorId[]) {
     setPrefs({ ...prefs, sectors: next });
@@ -23,14 +23,6 @@ export default function PerfilPage() {
 
   function setPlan(plan: "gratuito" | "premium") {
     setPrefs({ ...prefs, plan });
-  }
-
-  if (!ready) {
-    return (
-      <div className="flex min-h-full items-center justify-center text-navy/60">
-        A carregar perfil…
-      </div>
-    );
   }
 
   return (
@@ -48,7 +40,9 @@ export default function PerfilPage() {
           <h2 className="font-display text-xl font-semibold text-navy">
             Sectores seguidos
           </h2>
-          <p className="mt-1 text-sm text-navy/55">Liga ou desliga os fios que queres acompanhar.</p>
+          <p className="mt-1 text-sm text-navy/55">
+            Liga ou desliga os fios que queres acompanhar.
+          </p>
           <div className="mt-4">
             <SectorPicker
               selected={prefs.sectors}

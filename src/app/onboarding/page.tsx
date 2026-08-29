@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Logo } from "@/components/trico/logo";
 import { SectorPicker } from "@/components/trico/sector-picker";
 import { usePreferences } from "@/components/trico/preferences-provider";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { NOTIFICATION_OPTIONS, toggleSector } from "@/lib/preferences";
 import type { NotificationPref, SectorId } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -65,14 +65,17 @@ export default function OnboardingPage() {
             onToggle={(id) => setSectors((prev) => toggleSector(id, prev))}
           />
           <div className="space-y-3 pt-2">
-            <Button
-              size="lg"
-              className="h-12 w-full bg-terracotta text-base text-white hover:bg-terracotta/90"
+            <button
+              type="button"
+              className={cn(
+                buttonVariants({ size: "lg" }),
+                "h-12 w-full bg-terracotta text-base text-white hover:bg-terracotta/90 disabled:opacity-50",
+              )}
               disabled={sectors.length === 0}
               onClick={() => setStep(2)}
             >
               Continuar
-            </Button>
+            </button>
             <button
               type="button"
               className="w-full text-center text-sm font-medium text-navy underline-offset-4 hover:underline"
@@ -116,13 +119,16 @@ export default function OnboardingPage() {
             })}
           </div>
           <div className="space-y-3 pt-2">
-            <Button
-              size="lg"
-              className="h-12 w-full bg-terracotta text-base text-white hover:bg-terracotta/90"
+            <button
+              type="button"
+              className={cn(
+                buttonVariants({ size: "lg" }),
+                "h-12 w-full bg-terracotta text-base text-white hover:bg-terracotta/90",
+              )}
               onClick={() => finish()}
             >
               Ver o meu feed
-            </Button>
+            </button>
             <button
               type="button"
               className="w-full text-center text-sm font-medium text-navy/70"

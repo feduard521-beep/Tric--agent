@@ -5,7 +5,6 @@ import { useSearchParams } from "next/navigation";
 import { AppHeader } from "@/components/trico/app-header";
 import { BottomNav } from "@/components/trico/bottom-nav";
 import { PieceGrid } from "@/components/trico/piece-card";
-import { Input } from "@/components/ui/input";
 import { filterPieces } from "@/lib/data";
 
 function SearchInner() {
@@ -29,12 +28,13 @@ function SearchInner() {
           Pesquisa transversal a sectores e períodos.
         </p>
         <div className="mt-6">
-          <Input
+          <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Ex: kwanza, vacinação, solar…"
-            className="h-12 border-navy/15 bg-white/70 text-base"
+            className="h-12 w-full rounded-lg border border-navy/15 bg-white/70 px-3 text-base text-navy outline-none ring-terracotta/40 placeholder:text-navy/40 focus:border-terracotta focus:ring-3"
             autoFocus
+            aria-label="Pesquisar peças"
           />
         </div>
         <div className="mt-8">
@@ -48,7 +48,9 @@ function SearchInner() {
             </>
           ) : (
             <div className="rounded-2xl border border-dashed border-navy/15 bg-white/40 px-6 py-12 text-center">
-              <p className="font-display text-xl text-navy">Começa a tecer a pesquisa</p>
+              <p className="font-display text-xl text-navy">
+                Começa a tecer a pesquisa
+              </p>
               <p className="mt-2 text-sm text-navy/60">
                 Escreve um tema, sector ou palavra-chave.
               </p>
