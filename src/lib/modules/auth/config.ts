@@ -118,20 +118,27 @@ export const authConfig: NextAuthConfig = {
       }
       return true;
     },
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
+      if (trigger === "update" && session && typeof session === "object") {
+        const s = session as { name?: string };
+        if (typeof s.name === "string" && s.name.trim()) {
+          token.name = s.name.trim();
+        }
+      }
       if (user) {
         token.sub = user.id;
+        if (user.name) token.name = user.name;
         const role =
           ("role" in user && typeof user.role === "string" && user.role) ||
           "user";
-        // Não promover só por email no JWT sem verificação — role vem da BD
         token.role = role;
       } else if (token.sub && prisma) {
         const dbUser = await prisma.user.findUnique({
           where: { id: token.sub },
-          select: { role: true, email: true, emailVerified: true },
+          select: { role: true, email: true, emailVerified: true, name: true },
         });
         if (dbUser) {
+          if (dbUser.name) token.name = dbUser.name;
           if (isAdminEmail(dbUser.email) && dbUser.role !== "admin") {
             const promoted = await ensureAdminRole(token.sub, dbUser.email, {
               emailVerified: dbUser.emailVerified,
@@ -148,6 +155,9 @@ export const authConfig: NextAuthConfig = {
       if (session.user && token.sub) {
         session.user.id = token.sub;
         session.user.role = (token.role as string) || "user";
+        if (typeof token.name === "string") {
+          session.user.name = token.name;
+        }
       }
       return session;
     },

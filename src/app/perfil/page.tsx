@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { signOut, useSession } from "next-auth/react";
 import { AppHeader } from "@/components/trico/app-header";
 import { BottomNav } from "@/components/trico/bottom-nav";
 import { SectorPicker } from "@/components/trico/sector-picker";
 import { usePreferences } from "@/components/trico/preferences-provider";
+import { displayNameFromUser } from "@/components/trico/user-menu";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { NOTIFICATION_OPTIONS, toggleSector } from "@/lib/preferences";
 import type { NotificationPref, SectorId } from "@/lib/types";
@@ -14,7 +16,17 @@ import { cn } from "@/lib/utils";
 
 export default function PerfilPage() {
   const { prefs, setPrefs } = usePreferences();
-  const { data: session } = useSession();
+  const { data: session, update: updateSession, status } = useSession();
+  const [name, setName] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (session?.user) {
+      setName(session.user.name?.trim() || displayNameFromUser(session.user));
+    }
+  }, [session?.user]);
 
   function setSectors(next: SectorId[]) {
     const clamped = clampSectorsForPlan(next, prefs.plan);
@@ -25,6 +37,33 @@ export default function PerfilPage() {
     setPrefs({ ...prefs, notifications: id });
   }
 
+  async function saveProfile(e: React.FormEvent) {
+    e.preventDefault();
+    if (!session?.user) return;
+    setSaving(true);
+    setError(null);
+    setMessage(null);
+    try {
+      const res = await fetch("/api/me/profile", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Não foi possível guardar.");
+        return;
+      }
+      setMessage(data.message || "Guardado.");
+      // Actualiza o JWT/sessão para o header mostrar o novo nome
+      await updateSession({ name: data.user?.name });
+    } catch {
+      setError("Erro de rede.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <div className="flex min-h-full flex-col pb-24 md:pb-10">
       <AppHeader solid />
@@ -33,30 +72,78 @@ export default function PerfilPage() {
           Perfil
         </h1>
         <p className="mt-2 text-navy/65">
-          Sectores, notificações e plano — o tear à tua medida.
+          Conta, sectores e notificações — o tear à tua medida.
         </p>
 
-        <section className="mt-6 rounded-2xl border border-navy/10 bg-white/55 p-4 text-sm">
-          {session?.user ? (
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p>
-                  Sessão: <strong>{session.user.email}</strong>
-                </p>
-              </div>
-              <Button
-                variant="outline"
-                onClick={() => signOut({ callbackUrl: "/" })}
-              >
-                Terminar sessão
-              </Button>
-            </div>
+        <section className="mt-6 border border-line bg-white p-5">
+          {status === "authenticated" && session?.user ? (
+            <>
+              <h2 className="text-xs font-bold uppercase tracking-wide text-terracotta">
+                Conta
+              </h2>
+              <form className="mt-4 space-y-4" onSubmit={(e) => void saveProfile(e)}>
+                <label className="block text-sm">
+                  <span className="mb-1 block font-medium text-navy">Nome</span>
+                  <input
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                    minLength={2}
+                    maxLength={80}
+                    className="h-11 w-full border border-line px-3 text-navy outline-none focus:border-navy"
+                    autoComplete="name"
+                  />
+                  <span className="mt-1 block text-xs text-muted-foreground">
+                    Aparece no canto superior direito do site.
+                  </span>
+                </label>
+                <label className="block text-sm">
+                  <span className="mb-1 block font-medium text-navy">Email</span>
+                  <input
+                    value={session.user.email || ""}
+                    readOnly
+                    className="h-11 w-full border border-line bg-secondary/40 px-3 text-navy/70"
+                  />
+                  <span className="mt-1 block text-xs text-muted-foreground">
+                    O email não se altera aqui (é o identificador da conta).
+                  </span>
+                </label>
+                {error ? (
+                  <p className="border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                    {error}
+                  </p>
+                ) : null}
+                {message ? (
+                  <p className="border border-navy/15 bg-secondary px-3 py-2 text-sm text-navy">
+                    {message}
+                  </p>
+                ) : null}
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="submit"
+                    disabled={saving}
+                    className="bg-navy text-white hover:bg-navy/90"
+                  >
+                    {saving ? "A guardar…" : "Guardar nome"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => signOut({ callbackUrl: "/" })}
+                  >
+                    Terminar sessão
+                  </Button>
+                </div>
+              </form>
+            </>
           ) : (
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className="text-navy/70">Modo local (sem conta na BD).</p>
+              <p className="text-navy/70">
+                Entra na conta para editar o nome e sincronizar preferências.
+              </p>
               <Link
                 href="/entrar"
-                className={cn(buttonVariants(), "bg-navy text-cream")}
+                className={cn(buttonVariants(), "bg-navy text-white")}
               >
                 Entrar / Registar
               </Link>
@@ -96,10 +183,10 @@ export default function PerfilPage() {
                   type="button"
                   onClick={() => setNotifications(opt.id)}
                   className={cn(
-                    "w-full rounded-2xl border p-4 text-left transition",
+                    "w-full border p-4 text-left transition",
                     active
-                      ? "border-terracotta/50 bg-white"
-                      : "border-navy/10 bg-white/50",
+                      ? "border-navy bg-secondary/40"
+                      : "border-line bg-white hover:border-navy/30",
                   )}
                 >
                   <p className="font-medium text-navy">{opt.label}</p>
@@ -119,7 +206,7 @@ export default function PerfilPage() {
           </h2>
           <p className="mt-2 text-sm text-white/70">
             {prefs.plan === "premium"
-              ? "Sectores ilimitados e Resumo do Ano desbloqueados."
+              ? "Sectores ilimitados, sem publicidade e Resumo do Ano."
               : "No gratuito: até 2 sectores. Premium (2000 Kz/mês) desbloqueia tudo."}
           </p>
           <div className="mt-5 flex flex-wrap gap-3">

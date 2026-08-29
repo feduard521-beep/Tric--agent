@@ -7,6 +7,7 @@ import { Search, UserRound } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { Logo } from "./logo";
 import { usePreferences } from "./preferences-provider";
+import { UserMenu } from "./user-menu";
 import { cn } from "@/lib/utils";
 
 const NAV = [
@@ -44,9 +45,7 @@ export function AppHeader({ solid = false }: { solid?: boolean }) {
             >
               Anunciar
             </Link>
-            <Link href="/entrar" className="shrink-0 font-semibold text-white/90 hover:text-white">
-              {session?.user ? session.user.email : "Entrar / Registar"}
-            </Link>
+            <UserMenu />
           </div>
         </div>
       </div>
@@ -84,7 +83,8 @@ export function AppHeader({ solid = false }: { solid?: boolean }) {
           <Link
             href={session?.user ? "/perfil" : "/entrar"}
             className="inline-flex size-9 items-center justify-center border border-line text-navy hover:bg-navy hover:text-white"
-            aria-label="Conta"
+            aria-label={session?.user ? "Abrir perfil" : "Entrar"}
+            title={session?.user ? "Perfil e preferências" : "Entrar"}
           >
             <UserRound className="h-4 w-4" />
           </Link>
