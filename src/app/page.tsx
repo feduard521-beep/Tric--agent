@@ -13,12 +13,12 @@ export default async function LandingPage() {
   return (
     <div className="relative flex min-h-full flex-col">
       <header className="relative z-10 mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-5 sm:px-6">
-        <Logo withTagline />
+        <Logo withTagline size="md" />
         <Link
           href="/entrar"
           className={cn(
             buttonVariants({ variant: "outline" }),
-            "border-navy/20 bg-white/50 text-navy hover:bg-white",
+            "rounded-full border-navy/20 bg-white/70 text-navy hover:bg-navy hover:text-cream",
           )}
         >
           Entrar
@@ -39,7 +39,7 @@ export default async function LandingPage() {
               <p className="reveal text-sm font-semibold uppercase tracking-[0.22em] text-terracotta">
                 Angola · MVP
               </p>
-              <h1 className="reveal reveal-delay-1 mt-4 font-display text-[clamp(2.75rem,8vw,5.5rem)] font-semibold leading-[0.95] tracking-tight text-navy">
+              <h1 className="reveal reveal-delay-1 mt-4 font-brand text-[clamp(2.75rem,8vw,5.25rem)] leading-[0.95] text-navy">
                 Tricô
               </h1>
               <p className="reveal reveal-delay-2 mt-5 max-w-xl text-lg leading-relaxed text-navy/75 sm:text-xl">
@@ -50,7 +50,7 @@ export default async function LandingPage() {
                   href="/entrar"
                   className={cn(
                     buttonVariants({ size: "lg" }),
-                    "h-12 bg-terracotta px-6 text-base text-white hover:bg-terracotta/90",
+                    "h-12 rounded-full bg-terracotta px-7 text-base font-semibold text-navy hover:bg-terracotta/90",
                   )}
                 >
                   Começar Grátis

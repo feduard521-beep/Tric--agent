@@ -12,6 +12,8 @@
   --color-terracotta: var(--terracotta);
   --color-yarn: var(--yarn);
   --color-mesh: var(--mesh);
+  --color-tan: var(--tan);
+  --color-sand: var(--sand);
   --font-sans: var(--font-sans);
   --font-display: var(--font-display);
   --font-mono: var(--font-geist-mono);
@@ -55,43 +57,46 @@
 }
 
 :root {
-  --cream: #f4ebe0;
-  --navy: #0d2744;
-  --terracotta: #c45c26;
-  --yarn: #9a5a36;
-  --mesh: #1c3d63;
-  --background: #f4ebe0;
-  --foreground: #0d2744;
-  --card: #fffaf4;
-  --card-foreground: #0d2744;
-  --popover: #fffaf4;
-  --popover-foreground: #0d2744;
-  --primary: #0d2744;
-  --primary-foreground: #f4ebe0;
-  --secondary: #e8d8c6;
-  --secondary-foreground: #0d2744;
-  --muted: #eadfce;
-  --muted-foreground: #5a6b7d;
-  --accent: #c45c26;
+  /* Brand from mockups */
+  --cream: #f7f3ee;
+  --navy: #002147;
+  --terracotta: #a65e2e;
+  --yarn: #a65e2e;
+  --mesh: #002147;
+  --tan: #f0e4d4;
+  --sand: #e8d7c2;
+  --background: #f7f3ee;
+  --foreground: #002147;
+  --card: #fffcf8;
+  --card-foreground: #002147;
+  --popover: #fffcf8;
+  --popover-foreground: #002147;
+  --primary: #002147;
+  --primary-foreground: #f7f3ee;
+  --secondary: #f0e4d4;
+  --secondary-foreground: #002147;
+  --muted: #ebe0d2;
+  --muted-foreground: #5a6a7c;
+  --accent: #a65e2e;
   --accent-foreground: #fff8f2;
   --destructive: oklch(0.577 0.245 27.325);
-  --border: color-mix(in srgb, #0d2744 12%, transparent);
-  --input: color-mix(in srgb, #0d2744 14%, transparent);
-  --ring: #c45c26;
-  --chart-1: #c45c26;
-  --chart-2: #0d2744;
-  --chart-3: #9a5a36;
-  --chart-4: #1c3d63;
+  --border: color-mix(in srgb, #002147 12%, transparent);
+  --input: color-mix(in srgb, #002147 14%, transparent);
+  --ring: #a65e2e;
+  --chart-1: #a65e2e;
+  --chart-2: #002147;
+  --chart-3: #8b4f28;
+  --chart-4: #1a3a5c;
   --chart-5: #d4a574;
-  --radius: 0.75rem;
-  --sidebar: #fffaf4;
-  --sidebar-foreground: #0d2744;
-  --sidebar-primary: #0d2744;
-  --sidebar-primary-foreground: #f4ebe0;
-  --sidebar-accent: #e8d8c6;
-  --sidebar-accent-foreground: #0d2744;
-  --sidebar-border: color-mix(in srgb, #0d2744 12%, transparent);
-  --sidebar-ring: #c45c26;
+  --radius: 0.875rem;
+  --sidebar: #fffcf8;
+  --sidebar-foreground: #002147;
+  --sidebar-primary: #002147;
+  --sidebar-primary-foreground: #f7f3ee;
+  --sidebar-accent: #f0e4d4;
+  --sidebar-accent-foreground: #002147;
+  --sidebar-border: color-mix(in srgb, #002147 12%, transparent);
+  --sidebar-ring: #a65e2e;
 }
 
 @layer base {
@@ -100,10 +105,10 @@
   }
   body {
     @apply bg-cream text-navy antialiased;
+    background-color: var(--cream);
     background-image:
-      radial-gradient(ellipse 90% 55% at 10% -10%, rgba(196, 92, 38, 0.14), transparent 55%),
-      radial-gradient(ellipse 70% 50% at 100% 0%, rgba(13, 39, 68, 0.1), transparent 50%),
-      linear-gradient(180deg, #f7f0e6 0%, #f4ebe0 40%, #efe3d4 100%);
+      radial-gradient(ellipse 80% 50% at 0% 0%, rgba(166, 94, 46, 0.07), transparent 55%),
+      radial-gradient(ellipse 60% 40% at 100% 0%, rgba(0, 33, 71, 0.06), transparent 50%);
     background-attachment: fixed;
   }
   html {
@@ -115,16 +120,35 @@
   .font-display {
     font-family: var(--font-display), ui-serif, Georgia, serif;
   }
+  .font-brand {
+    font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+  }
   .mesh-bg {
     background-image:
-      linear-gradient(rgba(13, 39, 68, 0.04) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(13, 39, 68, 0.04) 1px, transparent 1px);
+      linear-gradient(rgba(0, 33, 71, 0.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 33, 71, 0.045) 1px, transparent 1px);
     background-size: 28px 28px;
   }
-  .yarn-ring {
-    background:
-      radial-gradient(circle at 30% 40%, rgba(196, 92, 38, 0.22), transparent 42%),
-      radial-gradient(circle at 70% 60%, rgba(13, 39, 68, 0.16), transparent 45%);
+  .yarn-watermark {
+    background-image: url("/brand-logo.jpg");
+    background-repeat: no-repeat;
+    background-position: right -8% top 20%;
+    background-size: min(42vw, 420px);
+    opacity: 0.06;
+  }
+  .filter-label {
+    font-family: var(--font-display), ui-serif, Georgia, serif;
+    color: #b08968;
+    font-size: 0.95rem;
+    font-weight: 500;
+  }
+  .pill {
+    @apply inline-flex items-center justify-center rounded-full border border-navy/25 bg-white px-4 py-2 text-sm font-semibold text-navy transition;
+  }
+  .pill-active {
+    @apply border-navy bg-navy text-cream;
   }
   .stretched-link::after {
     content: "";
@@ -142,6 +166,15 @@
   }
   .reveal-delay-3 {
     animation-delay: 0.36s;
+  }
+  .card-lift {
+    transition:
+      transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 0.35s ease;
+  }
+  .card-lift:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 18px 40px -28px rgba(0, 33, 71, 0.45);
   }
 }
 

@@ -1,8 +1,7 @@
 "use client";
 
 /**
- * Feed cliente — lê peças via /api/pieces (BD + fallback mock).
- * Teste: abrir /feed?tempo=dia e confirmar grelha; correr npm run ingest.
+ * Feed — grelha visual alinhada às mockups Tricô.
  */
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
@@ -12,7 +11,7 @@ import { BottomNav } from "@/components/trico/bottom-nav";
 import { PieceGrid } from "@/components/trico/piece-card";
 import { TimeFilter } from "@/components/trico/time-filter";
 import { usePreferences } from "@/components/trico/preferences-provider";
-import { SectorIcon } from "@/components/trico/sector-icon";
+import { PreferencesPanel } from "@/components/trico/preferences-panel";
 import { SECTORS } from "@/lib/sectors";
 import type { Piece, TimeWindow } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -28,7 +27,6 @@ export default function FeedPage() {
   const yearLocked = tempo === "ano" && !isPremium;
 
   const [pieces, setPieces] = useState<Piece[]>([]);
-  const [digest, setDigest] = useState<Piece[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -44,10 +42,7 @@ export default function FeedPage() {
       setError(null);
       try {
         if (yearLocked) {
-          if (!cancelled) {
-            setPieces([]);
-            setDigest([]);
-          }
+          if (!cancelled) setPieces([]);
           return;
         }
 
@@ -59,15 +54,7 @@ export default function FeedPage() {
         if (!sectorParam) {
           list = list.filter((p) => followed.includes(p.sectorId));
         }
-
-        const digestRes = await fetch("/api/pieces?tempo=dia");
-        const digestData = await digestRes.json();
-        const digestList = ((digestData.pieces || []) as Piece[]).slice(0, 5);
-
-        if (!cancelled) {
-          setPieces(list);
-          setDigest(digestList);
-        }
+        if (!cancelled) setPieces(list);
       } catch {
         if (!cancelled) setError("Não foi possível carregar as peças.");
       } finally {
@@ -81,115 +68,99 @@ export default function FeedPage() {
   }, [queryKey, yearLocked, tempo, sectorParam, followed]);
 
   return (
-    <div className="flex min-h-full flex-col pb-24 md:pb-10">
+    <div className="relative flex min-h-full flex-col pb-24 md:pb-10">
+      <div className="pointer-events-none absolute inset-0 yarn-watermark" aria-hidden />
       <AppHeader solid />
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-terracotta">
-              Feed personalizado
-            </p>
-            <h1 className="mt-2 font-display text-3xl font-semibold text-navy sm:text-4xl">
-              {ready && prefs.onboarded
-                ? "O teu dia, tecido"
-                : "Resumo Geral do Dia"}
-            </h1>
-            <p className="mt-2 max-w-xl text-navy/65">
-              Peças agregadas por sector e período — RSS + IA com fallback local.
-            </p>
-          </div>
-          <TimeFilter value={tempo} basePath="/feed" />
-        </div>
+      <main className="relative mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 lg:py-8">
+        <div className="flex flex-col gap-8 lg:flex-row">
+          <div className="min-w-0 flex-1 space-y-7">
+            <div className="space-y-5">
+              <TimeFilter value={tempo} basePath="/feed" />
 
-        <div className="mt-8 flex gap-2 overflow-x-auto pb-2">
-          <Link
-            href={`/feed?tempo=${tempo}`}
-            className={cn(
-              "shrink-0 rounded-full px-4 py-2 text-sm font-medium transition",
-              !sectorParam
-                ? "bg-navy text-cream"
-                : "bg-white/60 text-navy/70 hover:bg-white",
-            )}
-          >
-            Todos
-          </Link>
-          {SECTORS.map((s) => {
-            const active = sectorParam === s.id;
-            const followedSector = followed.includes(s.id);
-            return (
-              <Link
-                key={s.id}
-                href={`/feed?tempo=${tempo}&sector=${s.id}`}
-                className={cn(
-                  "inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition",
-                  active
-                    ? "bg-navy text-cream"
-                    : "bg-white/60 text-navy/70 hover:bg-white",
-                  !followedSector && "opacity-55",
-                )}
-              >
-                <SectorIcon id={s.id} className="h-4 w-4" />
-                {s.short}
-              </Link>
-            );
-          })}
-        </div>
-
-        {error ? (
-          <p className="mt-6 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">
-            {error}
-          </p>
-        ) : null}
-
-        {!sectorParam && tempo === "dia" && !yearLocked ? (
-          <section className="mt-10 rounded-3xl border border-navy/10 bg-white/55 p-5 sm:p-7">
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <h2 className="font-display text-2xl font-semibold text-navy">
-                Resumo Geral do Dia
-              </h2>
-              <span className="text-xs uppercase tracking-wider text-navy/40">
-                5 sectores
-              </span>
+              <div className="space-y-2">
+                <p className="filter-label">Categorias de sector</p>
+                <div className="flex flex-wrap gap-2">
+                  <Link
+                    href={`/feed?tempo=${tempo}`}
+                    className={cn("pill", !sectorParam && "pill-active")}
+                  >
+                    Todos
+                  </Link>
+                  {SECTORS.map((s) => {
+                    const active = sectorParam === s.id;
+                    const followedSector = followed.includes(s.id);
+                    return (
+                      <Link
+                        key={s.id}
+                        href={`/feed?tempo=${tempo}&sector=${s.id}`}
+                        className={cn(
+                          "pill",
+                          active && "pill-active",
+                          !followedSector && "opacity-50",
+                        )}
+                      >
+                        {s.short}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
-            {loading ? (
-              <p className="text-navy/50">A tecer o resumo…</p>
+
+            <div>
+              <h1 className="font-display text-2xl font-semibold text-navy sm:text-3xl">
+                {ready && prefs.onboarded
+                  ? "O teu dia, tecido"
+                  : "Resumo Geral do Dia"}
+              </h1>
+              <p className="mt-1 text-sm text-navy/55">
+                Peças agregadas por sector e período.
+              </p>
+            </div>
+
+            {error ? (
+              <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">
+                {error}
+              </p>
+            ) : null}
+
+            {yearLocked ? (
+              <div className="rounded-3xl border border-navy/10 bg-navy px-6 py-10 text-cream">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cream/50">
+                  Premium
+                </p>
+                <h3 className="mt-2 font-display text-2xl font-semibold">
+                  Resumo do Ano
+                </h3>
+                <p className="mt-2 max-w-lg text-sm text-cream/70">
+                  A retrospectiva anual tece os padrões do teu sector num único
+                  quadro. Disponível no plano Premium.
+                </p>
+                <Link
+                  href="/perfil"
+                  className="mt-5 inline-flex h-10 items-center rounded-full bg-terracotta px-5 text-sm font-semibold text-white hover:bg-terracotta/90"
+                >
+                  Ver planos no perfil
+                </Link>
+              </div>
+            ) : loading ? (
+              <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="h-72 animate-pulse rounded-[1.15rem] bg-navy/5"
+                  />
+                ))}
+              </div>
             ) : (
-              <PieceGrid pieces={digest} />
+              <PieceGrid pieces={pieces} />
             )}
-          </section>
-        ) : null}
+          </div>
 
-        <section className="mt-10">
-          <h2 className="mb-4 font-display text-2xl font-semibold text-navy">
-            {sectorParam
-              ? SECTORS.find((s) => s.id === sectorParam)?.name
-              : "Os teus sectores"}
-          </h2>
-          {yearLocked ? (
-            <div className="rounded-3xl border border-navy/10 bg-navy px-6 py-10 text-cream">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cream/50">
-                Premium
-              </p>
-              <h3 className="mt-2 font-display text-2xl font-semibold">
-                Resumo do Ano
-              </h3>
-              <p className="mt-2 max-w-lg text-sm text-cream/70">
-                A retrospectiva anual tece os padrões do teu sector num único
-                quadro. Disponível no plano Premium.
-              </p>
-              <Link
-                href="/perfil"
-                className="mt-5 inline-flex h-10 items-center rounded-lg bg-terracotta px-4 text-sm font-medium text-white hover:bg-terracotta/90"
-              >
-                Ver planos no perfil
-              </Link>
-            </div>
-          ) : loading ? (
-            <p className="text-navy/50">A carregar peças…</p>
-          ) : (
-            <PieceGrid pieces={pieces} />
-          )}
-        </section>
+          <aside className="hidden w-72 shrink-0 xl:block">
+            <PreferencesPanel pieces={pieces.slice(0, 6)} />
+          </aside>
+        </div>
       </main>
       <BottomNav />
     </div>
