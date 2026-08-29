@@ -1,8 +1,8 @@
 /**
  * Configuração Auth.js (NextAuth v5).
- * - Email/password (Credentials) activo com Postgres.
- * - Google / Apple com AUTH_GOOGLE_* / AUTH_APPLE_*.
- * - Admins via ADMIN_EMAILS (ex.: feduard521@gmail.com).
+ * - Email/password (Credentials) com Postgres.
+ * - Google / Apple com AUTH_GOOGLE_* / AUTH_APPLE_* (sem linking perigoso).
+ * - Admins via ADMIN_EMAILS + email verificado (ou bootstrap).
  */
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
@@ -12,6 +12,8 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { ensureAdminRole, isAdminEmail } from "@/lib/modules/auth/roles";
+import { requireAuthSecret } from "@/lib/security/secrets";
+import { clientIp, rateLimit } from "@/lib/security/rate-limit";
 import type { NextAuthConfig } from "next-auth";
 
 function socialProviders() {
@@ -21,7 +23,7 @@ function socialProviders() {
       Google({
         clientId: process.env.AUTH_GOOGLE_ID,
         clientSecret: process.env.AUTH_GOOGLE_SECRET,
-        allowDangerousEmailAccountLinking: true,
+        // Sem allowDangerousEmailAccountLinking — evita takeover via Credentials
       }),
     );
   }
@@ -30,7 +32,6 @@ function socialProviders() {
       Apple({
         clientId: process.env.AUTH_APPLE_ID,
         clientSecret: process.env.AUTH_APPLE_SECRET,
-        allowDangerousEmailAccountLinking: true,
       }),
     );
   }
@@ -50,7 +51,7 @@ export const authConfig: NextAuthConfig = {
         email: { label: "Email", type: "email" },
         password: { label: "Palavra-passe", type: "password" },
       },
-      async authorize(credentials) {
+      async authorize(credentials, request) {
         if (!prisma) return null;
         const email = String(credentials?.email || "")
           .trim()
@@ -58,13 +59,19 @@ export const authConfig: NextAuthConfig = {
         const password = String(credentials?.password || "");
         if (!email || !password) return null;
 
+        const ip = request ? clientIp(request) : "unknown";
+        const rl = rateLimit(`login:${ip}:${email}`, 10, 15 * 60 * 1000);
+        if (!rl.ok) return null;
+
         const user = await prisma.user.findUnique({ where: { email } });
         if (!user?.passwordHash) return null;
 
         const ok = await bcrypt.compare(password, user.passwordHash);
         if (!ok) return null;
 
-        await ensureAdminRole(user.id, user.email);
+        await ensureAdminRole(user.id, user.email, {
+          emailVerified: user.emailVerified,
+        });
 
         const refreshed = await prisma.user.findUnique({ where: { id: user.id } });
 
@@ -80,9 +87,13 @@ export const authConfig: NextAuthConfig = {
     ...socialProviders(),
   ],
   callbacks: {
-    async signIn({ user }) {
+    async signIn({ user, account }) {
       if (user?.id && user.email) {
-        await ensureAdminRole(user.id, user.email);
+        const oauthVerified =
+          account?.provider === "google" || account?.provider === "apple";
+        await ensureAdminRole(user.id, user.email, {
+          emailVerified: oauthVerified ? new Date() : undefined,
+        });
       }
       return true;
     },
@@ -91,17 +102,20 @@ export const authConfig: NextAuthConfig = {
         token.sub = user.id;
         const role =
           ("role" in user && typeof user.role === "string" && user.role) ||
-          (isAdminEmail(user.email) ? "admin" : "user");
+          "user";
+        // Não promover só por email no JWT sem verificação — role vem da BD
         token.role = role;
       } else if (token.sub && prisma) {
         const dbUser = await prisma.user.findUnique({
           where: { id: token.sub },
-          select: { role: true, email: true },
+          select: { role: true, email: true, emailVerified: true },
         });
         if (dbUser) {
           if (isAdminEmail(dbUser.email) && dbUser.role !== "admin") {
-            await ensureAdminRole(token.sub, dbUser.email);
-            token.role = "admin";
+            const promoted = await ensureAdminRole(token.sub, dbUser.email, {
+              emailVerified: dbUser.emailVerified,
+            });
+            token.role = promoted ? "admin" : dbUser.role;
           } else {
             token.role = dbUser.role;
           }
@@ -118,7 +132,7 @@ export const authConfig: NextAuthConfig = {
     },
   },
   trustHost: true,
-  secret: process.env.AUTH_SECRET || "trico-build-placeholder-change-me",
+  secret: requireAuthSecret(),
 };
 
 export const { handlers, auth, signIn, signOut } = NextAuth(authConfig);

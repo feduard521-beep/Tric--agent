@@ -13,11 +13,16 @@ export function SiteFooter() {
             Agregador de notícias angolano: junta fontes, classifica por sector e
             resume o essencial — hora, dia, semana e ano.
           </p>
-          <p className="mt-3 text-sm text-navy">
-            <a href="mailto:feduard521@gmail.com" className="hover:text-terracotta">
-              feduard521@gmail.com
-            </a>
-          </p>
+          {process.env.NEXT_PUBLIC_CONTACT_EMAIL ? (
+            <p className="mt-3 text-sm text-navy">
+              <a
+                href={`mailto:${process.env.NEXT_PUBLIC_CONTACT_EMAIL}`}
+                className="hover:text-terracotta"
+              >
+                {process.env.NEXT_PUBLIC_CONTACT_EMAIL}
+              </a>
+            </p>
+          ) : null}
         </div>
         <div>
           <SectionBar title="Mais lidas" />

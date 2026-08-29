@@ -1,11 +1,12 @@
 /**
  * Registo local por email + palavra-passe.
- * Na Vercel sem BD devolve 503 (usar Postgres numa fase seguinte).
+ * Rate limit por IP; resposta genérica para não enumerar emails.
  */
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
+import { clientIp, rateLimit } from "@/lib/security/rate-limit";
 
 const schema = z.object({
   email: z.string().email(),
@@ -15,6 +16,18 @@ const schema = z.object({
 
 export async function POST(req: Request) {
   try {
+    const ip = clientIp(req);
+    const rl = rateLimit(`register:${ip}`, 5, 60 * 60 * 1000);
+    if (!rl.ok) {
+      return NextResponse.json(
+        { error: "Demasiados pedidos. Tenta mais tarde." },
+        {
+          status: 429,
+          headers: { "Retry-After": String(rl.retryAfterSec) },
+        },
+      );
+    }
+
     if (!prisma) {
       return NextResponse.json(
         {
@@ -37,7 +50,14 @@ export async function POST(req: Request) {
     const email = parsed.data.email.trim().toLowerCase();
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
-      return NextResponse.json({ error: "Email já registado." }, { status: 409 });
+      // Resposta genérica — evita enumeração de emails
+      return NextResponse.json(
+        {
+          error:
+            "Não foi possível criar a conta. Se já tens conta, entra ou recupera a password.",
+        },
+        { status: 400 },
+      );
     }
 
     const passwordHash = await bcrypt.hash(parsed.data.password, 10);

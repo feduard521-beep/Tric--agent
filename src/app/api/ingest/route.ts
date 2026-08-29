@@ -1,29 +1,40 @@
 /**
  * Dispara ingestão RSS + APIs + pipeline IA.
  * Auth: header x-ingest-secret OU Authorization: Bearer <CRON_SECRET|INGEST_SECRET>
- * Vercel Cron envia Authorization: Bearer <CRON_SECRET>
+ * Em produção exige secret configurado (sem fallback).
  */
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { runIngest } from "@/lib/modules/rss/ingest";
 import { getActiveNewsProviders } from "@/lib/modules/news/providers";
+import {
+  requireIngestSecret,
+  timingSafeStringEqual,
+} from "@/lib/security/secrets";
 
 export const maxDuration = 60;
 
 function authorize(req: Request) {
-  const expected =
-    process.env.CRON_SECRET ||
-    process.env.INGEST_SECRET ||
-    "trico-ingest-local";
-  const headerSecret = req.headers.get("x-ingest-secret");
+  const expected = requireIngestSecret();
+  if (!expected) return false;
+  const headerSecret = req.headers.get("x-ingest-secret") || "";
   const auth = req.headers.get("authorization") || "";
   const bearer = auth.toLowerCase().startsWith("bearer ")
     ? auth.slice(7).trim()
     : "";
-  return headerSecret === expected || bearer === expected;
+  return (
+    timingSafeStringEqual(headerSecret, expected) ||
+    timingSafeStringEqual(bearer, expected)
+  );
 }
 
 export async function POST(req: Request) {
+  if (!requireIngestSecret()) {
+    return NextResponse.json(
+      { error: "INGEST_SECRET/CRON_SECRET não configurado." },
+      { status: 503 },
+    );
+  }
   if (!authorize(req)) {
     return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
   }
@@ -48,13 +59,9 @@ export async function POST(req: Request) {
 }
 
 export async function GET(req: Request) {
-  // Vercel Cron pode chamar GET — autenticar igual
+  // Só responde com ingestão se autenticado — sem info pública de providers
   if (req.headers.get("authorization") || req.headers.get("x-ingest-secret")) {
     return POST(req);
   }
-  return NextResponse.json({
-    ok: true,
-    hint: "POST/GET autenticado com x-ingest-secret ou Bearer CRON_SECRET.",
-    providers: getActiveNewsProviders(),
-  });
+  return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
 }

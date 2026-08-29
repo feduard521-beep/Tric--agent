@@ -61,6 +61,16 @@ export default function FeedPage() {
         if (sectorParam) params.set("sector", sectorParam);
         const res = await fetch(`/api/pieces?${params.toString()}`);
         const data = await res.json();
+        if (res.status === 403 && data?.code === "PREMIUM_REQUIRED") {
+          if (!cancelled) {
+            setPieces([]);
+            setError(null);
+          }
+          return;
+        }
+        if (!res.ok) {
+          throw new Error(data?.error || "Erro");
+        }
         let list = (data.pieces || []) as Piece[];
         if (!sectorParam) {
           list = list.filter((p) => followedSectors.includes(p.sectorId));

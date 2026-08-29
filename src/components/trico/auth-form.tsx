@@ -2,7 +2,6 @@
 
 /**
  * Formulário de entrada / registo (Credentials + OAuth opcional).
- * Teste: criar conta demo@trico.ao / trico1234 e autenticar.
  */
 import { useMemo, useState } from "react";
 import { signIn } from "next-auth/react";

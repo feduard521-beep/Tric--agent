@@ -1,8 +1,11 @@
 /**
- * API pública de peças — consumível pela web e por clientes móveis futuros.
+ * API de peças — consumível pela web e clientes móveis.
+ * Janela `ano` exige sessão Premium activa (servidor).
  * Teste: GET /api/pieces?tempo=dia&sector=economia&q=kwanza
  */
 import { NextResponse } from "next/server";
+import { auth } from "@/lib/modules/auth/config";
+import { userHasActivePremium } from "@/lib/modules/billing/premium";
 import { listPieces, getContentStats } from "@/lib/modules/pieces/repository";
 
 export async function GET(req: Request) {
@@ -14,6 +17,22 @@ export async function GET(req: Request) {
 
   if (stats) {
     return NextResponse.json(await getContentStats());
+  }
+
+  if (tempo === "ano") {
+    const session = await auth();
+    const ok = await userHasActivePremium(session?.user?.id);
+    if (!ok) {
+      return NextResponse.json(
+        {
+          error: "Resumo do Ano disponível no plano Premium.",
+          code: "PREMIUM_REQUIRED",
+          count: 0,
+          pieces: [],
+        },
+        { status: 403 },
+      );
+    }
   }
 
   const pieces = await listPieces({

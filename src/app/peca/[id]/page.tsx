@@ -13,6 +13,7 @@ import {
 import { getSector } from "@/lib/sectors";
 import { formatClock } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { safeHttpUrl } from "@/lib/security/urls";
 
 export default async function PiecePage({
   params,
@@ -68,19 +69,31 @@ export default async function PiecePage({
               {piece.sourceCount} fontes agregadas nesta peça
             </p>
             <ul className="mt-4 space-y-2">
-              {piece.sources.map((source) => (
-                <li key={source.url + source.name}>
-                  <a
-                    href={source.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-2 rounded-lg border border-navy/10 bg-white/60 px-3 py-2 text-sm font-medium text-navy transition hover:border-terracotta/40"
-                  >
-                    {source.name}
-                    <ExternalLink className="h-3.5 w-3.5 text-navy/40" />
-                  </a>
-                </li>
-              ))}
+              {piece.sources.map((source) => {
+                const href = safeHttpUrl(source.url);
+                if (!href) {
+                  return (
+                    <li key={source.url + source.name}>
+                      <span className="inline-flex items-center gap-2 rounded-lg border border-navy/10 bg-white/60 px-3 py-2 text-sm font-medium text-navy">
+                        {source.name}
+                      </span>
+                    </li>
+                  );
+                }
+                return (
+                  <li key={href + source.name}>
+                    <a
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 rounded-lg border border-navy/10 bg-white/60 px-3 py-2 text-sm font-medium text-navy transition hover:border-terracotta/40"
+                    >
+                      {source.name}
+                      <ExternalLink className="h-3.5 w-3.5 text-navy/40" />
+                    </a>
+                  </li>
+                );
+              })}
             </ul>
           </section>
 
