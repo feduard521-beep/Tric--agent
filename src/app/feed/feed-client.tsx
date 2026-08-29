@@ -1,26 +1,31 @@
 "use client";
 
 /**
- * Feed — grelha visual alinhada às mockups Tricô.
+ * Feed editorial — grelha tipo portal de notícias, identidade Tricô.
  */
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { AppHeader } from "@/components/trico/app-header";
 import { BottomNav } from "@/components/trico/bottom-nav";
-import { PieceGrid } from "@/components/trico/piece-card";
+import {
+  PieceFeature,
+  PieceRow,
+  PieceSectorGrid,
+} from "@/components/trico/piece-card";
+import { SectionBar } from "@/components/trico/section-bar";
 import { TimeFilter } from "@/components/trico/time-filter";
 import { usePreferences } from "@/components/trico/preferences-provider";
-import { PreferencesPanel } from "@/components/trico/preferences-panel";
+import { SiteFooter } from "@/components/trico/site-footer";
 import { SECTORS } from "@/lib/sectors";
-import type { Piece, TimeWindow } from "@/lib/types";
+import type { Piece, SectorId, TimeWindow } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 export default function FeedPage() {
   const searchParams = useSearchParams();
-  const { prefs, ready } = usePreferences();
+  const { prefs } = usePreferences();
   const tempo = (searchParams.get("tempo") as TimeWindow) || "dia";
-  const sectorParam = searchParams.get("sector");
+  const sectorParam = searchParams.get("sector") as SectorId | null;
 
   const followed = prefs.sectors.length ? prefs.sectors : SECTORS.map((s) => s.id);
   const isPremium = prefs.plan === "premium";
@@ -45,7 +50,6 @@ export default function FeedPage() {
           if (!cancelled) setPieces([]);
           return;
         }
-
         const params = new URLSearchParams({ tempo });
         if (sectorParam) params.set("sector", sectorParam);
         const res = await fetch(`/api/pieces?${params.toString()}`);
@@ -61,107 +65,149 @@ export default function FeedPage() {
         if (!cancelled) setLoading(false);
       }
     }
-    load();
+    void load();
     return () => {
       cancelled = true;
     };
   }, [queryKey, yearLocked, tempo, sectorParam, followed]);
 
+  const bySector = useMemo(() => {
+    const map = new Map<SectorId, Piece[]>();
+    for (const s of SECTORS) map.set(s.id, []);
+    for (const p of pieces) {
+      const arr = map.get(p.sectorId);
+      if (arr) arr.push(p);
+    }
+    return map;
+  }, [pieces]);
+
+  const hero = pieces[0];
+  const secondary = pieces.slice(1, 3);
+  const latest = pieces.slice(0, 8);
+
   return (
-    <div className="relative flex min-h-full flex-col pb-24 md:pb-10">
-      <div className="pointer-events-none absolute inset-0 yarn-watermark" aria-hidden />
+    <div className="flex min-h-full flex-col pb-20 md:pb-0">
       <AppHeader solid />
-      <main className="relative mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 lg:py-8">
-        <div className="flex flex-col gap-8 lg:flex-row">
-          <div className="min-w-0 flex-1 space-y-7">
-            <div className="space-y-5">
-              <TimeFilter value={tempo} basePath="/feed" />
+      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-5 sm:px-6">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <TimeFilter value={tempo} basePath="/feed" showLabel />
+          <div className="flex flex-wrap gap-1">
+            <Link
+              href={`/feed?tempo=${tempo}`}
+              className={cn(
+                "px-2.5 py-1 text-xs font-bold uppercase",
+                !sectorParam ? "bg-navy text-white" : "text-navy/60 hover:text-navy",
+              )}
+            >
+              Todos
+            </Link>
+            {SECTORS.map((s) => (
+              <Link
+                key={s.id}
+                href={`/feed?tempo=${tempo}&sector=${s.id}`}
+                className={cn(
+                  "px-2.5 py-1 text-xs font-bold uppercase",
+                  sectorParam === s.id
+                    ? "bg-navy text-white"
+                    : "text-navy/60 hover:text-navy",
+                )}
+              >
+                {s.short}
+              </Link>
+            ))}
+          </div>
+        </div>
 
-              <div className="space-y-2">
-                <p className="filter-label">Categorias de sector</p>
-                <div className="flex flex-wrap gap-2">
-                  <Link
-                    href={`/feed?tempo=${tempo}`}
-                    className={cn("pill", !sectorParam && "pill-active")}
-                  >
-                    Todos
-                  </Link>
-                  {SECTORS.map((s) => {
-                    const active = sectorParam === s.id;
-                    const followedSector = followed.includes(s.id);
-                    return (
-                      <Link
-                        key={s.id}
-                        href={`/feed?tempo=${tempo}&sector=${s.id}`}
-                        className={cn(
-                          "pill",
-                          active && "pill-active",
-                          !followedSector && "opacity-50",
-                        )}
-                      >
-                        {s.short}
-                      </Link>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
+        <div className="mb-4 flex items-center gap-3 border border-navy bg-navy px-3 py-2 text-sm text-white">
+          <span className="font-bold uppercase tracking-wide text-terracotta">
+            Brevemente
+          </span>
+          <span className="text-white/85">
+            Resumo semanal personalizado por sector — plano Premium.
+          </span>
+        </div>
 
-            <div>
-              <h1 className="font-display text-2xl font-semibold text-navy sm:text-3xl">
-                {ready && prefs.onboarded
-                  ? "O teu dia, tecido"
-                  : "Resumo Geral do Dia"}
-              </h1>
-              <p className="mt-1 text-sm text-navy/55">
-                Peças agregadas por sector e período.
-              </p>
-            </div>
+        {error ? (
+          <p className="mb-4 border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            {error}
+          </p>
+        ) : null}
 
-            {error ? (
-              <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">
-                {error}
-              </p>
-            ) : null}
-
-            {yearLocked ? (
-              <div className="rounded-3xl border border-navy/10 bg-navy px-6 py-10 text-cream">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cream/50">
-                  Premium
-                </p>
-                <h3 className="mt-2 font-display text-2xl font-semibold">
-                  Resumo do Ano
-                </h3>
-                <p className="mt-2 max-w-lg text-sm text-cream/70">
-                  A retrospectiva anual tece os padrões do teu sector num único
-                  quadro. Disponível no plano Premium.
-                </p>
-                <Link
-                  href="/perfil"
-                  className="mt-5 inline-flex h-10 items-center rounded-full bg-terracotta px-5 text-sm font-semibold text-white hover:bg-terracotta/90"
-                >
-                  Ver planos no perfil
-                </Link>
-              </div>
-            ) : loading ? (
-              <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="h-72 animate-pulse rounded-[1.15rem] bg-navy/5"
-                  />
+        {yearLocked ? (
+          <div className="border border-navy bg-navy px-6 py-10 text-white">
+            <p className="text-xs font-bold uppercase tracking-wide text-white/50">
+              Premium
+            </p>
+            <h2 className="mt-2 text-2xl font-bold">Resumo do Ano</h2>
+            <p className="mt-2 max-w-lg text-sm text-white/70">
+              A retrospectiva anual dos teus sectores. Disponível no plano Premium.
+            </p>
+            <Link
+              href="/perfil"
+              className="mt-5 inline-flex h-10 items-center bg-terracotta px-4 text-sm font-bold text-white hover:bg-terracotta/90"
+            >
+              Ver planos
+            </Link>
+          </div>
+        ) : loading ? (
+          <div className="grid gap-4 lg:grid-cols-3">
+            <div className="h-64 animate-pulse bg-secondary lg:col-span-2" />
+            <div className="h-64 animate-pulse bg-secondary" />
+          </div>
+        ) : sectorParam ? (
+          <section>
+            <SectionBar
+              title={SECTORS.find((s) => s.id === sectorParam)?.name || "Sector"}
+            />
+            <PieceSectorGrid pieces={pieces} />
+          </section>
+        ) : (
+          <>
+            <section className="grid gap-4 lg:grid-cols-[1.4fr_1fr_0.9fr]">
+              <div>{hero ? <PieceFeature piece={hero} /> : null}</div>
+              <div className="space-y-3">
+                {secondary.map((p) => (
+                  <PieceFeature key={p.id} piece={p} />
                 ))}
               </div>
-            ) : (
-              <PieceGrid pieces={pieces} />
-            )}
-          </div>
+              <aside>
+                <SectionBar title="Últimas notícias" />
+                <ul className="divide-y divide-line border border-line">
+                  {latest.map((p) => (
+                    <li key={p.id}>
+                      <Link
+                        href={`/peca/${p.id}`}
+                        className="block px-3 py-2.5 text-sm font-semibold leading-snug text-navy hover:bg-secondary hover:text-terracotta"
+                      >
+                        {p.title}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </aside>
+            </section>
 
-          <aside className="hidden w-72 shrink-0 xl:block">
-            <PreferencesPanel pieces={pieces.slice(0, 6)} />
-          </aside>
-        </div>
+            {SECTORS.filter((s) => followed.includes(s.id)).map((sector) => {
+              const list = bySector.get(sector.id) || [];
+              if (list.length === 0) return null;
+              return (
+                <section key={sector.id} className="mt-8">
+                  <SectionBar
+                    title={sector.short}
+                    href={`/feed?tempo=${tempo}&sector=${sector.id}`}
+                  />
+                  <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                    {list.slice(0, 4).map((p) => (
+                      <PieceRow key={p.id} piece={p} />
+                    ))}
+                  </div>
+                </section>
+              );
+            })}
+          </>
+        )}
       </main>
+      <SiteFooter />
       <BottomNav />
     </div>
   );

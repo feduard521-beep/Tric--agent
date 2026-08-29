@@ -14,10 +14,11 @@
   --color-mesh: var(--mesh);
   --color-tan: var(--tan);
   --color-sand: var(--sand);
+  --color-line: var(--line);
   --font-sans: var(--font-sans);
   --font-display: var(--font-display);
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-display);
+  --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -57,45 +58,46 @@
 }
 
 :root {
-  /* Brand from mockups */
-  --cream: #f7f3ee;
+  /* Editorial portal — Tricô identity, clean not “AI soft” */
+  --cream: #f5f5f5;
   --navy: #002147;
   --terracotta: #a65e2e;
   --yarn: #a65e2e;
   --mesh: #002147;
-  --tan: #f0e4d4;
-  --sand: #e8d7c2;
-  --background: #f7f3ee;
-  --foreground: #002147;
-  --card: #fffcf8;
-  --card-foreground: #002147;
-  --popover: #fffcf8;
-  --popover-foreground: #002147;
+  --tan: #ece7e1;
+  --sand: #e2dbd3;
+  --line: #e4e4e4;
+  --background: #ffffff;
+  --foreground: #111827;
+  --card: #ffffff;
+  --card-foreground: #111827;
+  --popover: #ffffff;
+  --popover-foreground: #111827;
   --primary: #002147;
-  --primary-foreground: #f7f3ee;
-  --secondary: #f0e4d4;
+  --primary-foreground: #ffffff;
+  --secondary: #f3f4f6;
   --secondary-foreground: #002147;
-  --muted: #ebe0d2;
-  --muted-foreground: #5a6a7c;
+  --muted: #f3f4f6;
+  --muted-foreground: #6b7280;
   --accent: #a65e2e;
-  --accent-foreground: #fff8f2;
+  --accent-foreground: #ffffff;
   --destructive: oklch(0.577 0.245 27.325);
-  --border: color-mix(in srgb, #002147 12%, transparent);
-  --input: color-mix(in srgb, #002147 14%, transparent);
-  --ring: #a65e2e;
+  --border: #e5e7eb;
+  --input: #d1d5db;
+  --ring: #002147;
   --chart-1: #a65e2e;
   --chart-2: #002147;
   --chart-3: #8b4f28;
   --chart-4: #1a3a5c;
-  --chart-5: #d4a574;
-  --radius: 0.875rem;
-  --sidebar: #fffcf8;
-  --sidebar-foreground: #002147;
+  --chart-5: #9ca3af;
+  --radius: 0.125rem;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #111827;
   --sidebar-primary: #002147;
-  --sidebar-primary-foreground: #f7f3ee;
-  --sidebar-accent: #f0e4d4;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f3f4f6;
   --sidebar-accent-foreground: #002147;
-  --sidebar-border: color-mix(in srgb, #002147 12%, transparent);
+  --sidebar-border: #e5e7eb;
   --sidebar-ring: #a65e2e;
 }
 
@@ -104,51 +106,54 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-cream text-navy antialiased;
-    background-color: var(--cream);
-    background-image:
-      radial-gradient(ellipse 80% 50% at 0% 0%, rgba(166, 94, 46, 0.07), transparent 55%),
-      radial-gradient(ellipse 60% 40% at 100% 0%, rgba(0, 33, 71, 0.06), transparent 50%);
-    background-attachment: fixed;
+    @apply bg-white text-navy antialiased;
   }
   html {
     @apply font-sans;
+  }
+  a {
+    @apply underline-offset-2;
   }
 }
 
 @layer utilities {
   .font-display {
-    font-family: var(--font-display), ui-serif, Georgia, serif;
+    font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+    font-weight: 700;
   }
   .font-brand {
     font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
     font-weight: 800;
     letter-spacing: -0.03em;
   }
-  .mesh-bg {
-    background-image:
-      linear-gradient(rgba(0, 33, 71, 0.045) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0, 33, 71, 0.045) 1px, transparent 1px);
-    background-size: 28px 28px;
+  .section-bar {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    background: var(--navy);
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0.55rem 1.1rem 0.55rem 0.9rem;
+    clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 100%, 0 100%);
   }
-  .yarn-watermark {
-    background-image: url("/brand-logo.jpg");
-    background-repeat: no-repeat;
-    background-position: right -8% top 20%;
-    background-size: min(42vw, 420px);
-    opacity: 0.06;
+  .section-rule {
+    position: relative;
+    display: flex;
+    align-items: stretch;
+    margin-bottom: 1rem;
   }
-  .filter-label {
-    font-family: var(--font-display), ui-serif, Georgia, serif;
-    color: #b08968;
-    font-size: 0.95rem;
-    font-weight: 500;
+  .section-rule::after {
+    content: "";
+    flex: 1;
+    height: 2px;
+    align-self: flex-end;
+    background: var(--navy);
   }
-  .pill {
-    @apply inline-flex items-center justify-center rounded-full border border-navy/25 bg-white px-4 py-2 text-sm font-semibold text-navy transition;
-  }
-  .pill-active {
-    @apply border-navy bg-navy text-cream;
+  .news-thumb {
+    background: linear-gradient(135deg, #002147 0%, #1a3a5c 55%, #a65e2e 130%);
   }
   .stretched-link::after {
     content: "";
@@ -156,49 +161,17 @@
     inset: 0;
   }
   .reveal {
-    animation: reveal-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
-  }
-  .reveal-delay-1 {
-    animation-delay: 0.12s;
-  }
-  .reveal-delay-2 {
-    animation-delay: 0.24s;
-  }
-  .reveal-delay-3 {
-    animation-delay: 0.36s;
-  }
-  .card-lift {
-    transition:
-      transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
-      box-shadow 0.35s ease;
-  }
-  .card-lift:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 18px 40px -28px rgba(0, 33, 71, 0.45);
+    animation: reveal-up 0.45s ease both;
   }
 }
 
 @keyframes reveal-up {
   from {
     opacity: 0;
-    transform: translateY(18px);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
     transform: translateY(0);
   }
-}
-
-@keyframes stitch {
-  0% {
-    stroke-dashoffset: 120;
-  }
-  100% {
-    stroke-dashoffset: 0;
-  }
-}
-
-.stitch-line {
-  stroke-dasharray: 120;
-  animation: stitch 1.4s ease forwards;
 }

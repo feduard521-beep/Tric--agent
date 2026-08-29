@@ -1,104 +1,110 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import {
-  Bell,
-  Search,
-  Settings,
-  UserRound,
-} from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { FormEvent, useState } from "react";
+import { Search, UserRound } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { Logo } from "./logo";
 import { cn } from "@/lib/utils";
 
 const NAV = [
-  { href: "/feed", label: "Todos" },
-  { href: "/sectores", label: "Categorias" },
-  { href: "/pesquisar", label: "Pesquisar" },
+  { href: "/feed", label: "Início" },
+  { href: "/sectores", label: "Notícias" },
+  { href: "/pesquisar", label: "Artigos" },
   { href: "/perfil", label: "Perfil" },
 ];
 
 export function AppHeader({ solid = false }: { solid?: boolean }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { data: session } = useSession();
+  const [q, setQ] = useState("");
   const isAdmin = session?.user?.role === "admin";
 
   const links = isAdmin
-    ? [...NAV.slice(0, 3), { href: "/admin", label: "Admin" }, NAV[3]]
+    ? [...NAV, { href: "/admin", label: "Admin" }]
     : NAV;
 
-  return (
-    <header
-      className={cn(
-        "sticky top-0 z-30 border-b border-navy/8",
-        solid ? "bg-cream/95 backdrop-blur-md" : "bg-cream/85 backdrop-blur-md",
-      )}
-    >
-      <div className="mx-auto flex h-[4.25rem] max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
-        <Logo href="/feed" size="sm" />
+  function onSearch(e: FormEvent) {
+    e.preventDefault();
+    const term = q.trim();
+    router.push(term ? `/pesquisar?q=${encodeURIComponent(term)}` : "/pesquisar");
+  }
 
-        <nav
-          className="hidden items-center gap-1 lg:flex"
-          aria-label="Principal"
+  return (
+    <header className={cn("border-b border-line bg-white", solid && "sticky top-0 z-30")}>
+      {/* Brand strip */}
+      <div className="border-b border-line bg-navy text-white">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-2 text-[11px] sm:px-6">
+          <p className="truncate font-medium tracking-wide">
+            As notícias do teu sector, tecidas para ti · Angola
+          </p>
+          <Link href="/entrar" className="shrink-0 font-semibold text-white/90 hover:text-white">
+            {session?.user ? session.user.email : "Entrar / Registar"}
+          </Link>
+        </div>
+      </div>
+
+      <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-4 px-4 py-3 sm:px-6">
+        <Logo href="/feed" size="sm" />
+        <form
+          onSubmit={onSearch}
+          className="order-3 flex w-full flex-1 items-stretch sm:order-none sm:min-w-[220px] md:max-w-md"
         >
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Pesquisar notícias…"
+            className="h-10 w-full border border-line px-3 text-sm outline-none focus:border-navy"
+          />
+          <button
+            type="submit"
+            className="inline-flex h-10 items-center justify-center bg-navy px-3 text-white hover:bg-navy/90"
+            aria-label="Pesquisar"
+          >
+            <Search className="h-4 w-4" />
+          </button>
+        </form>
+        <Link
+          href={session?.user ? "/perfil" : "/entrar"}
+          className="ml-auto inline-flex size-9 items-center justify-center border border-line text-navy hover:bg-navy hover:text-white"
+          aria-label="Conta"
+        >
+          <UserRound className="h-4 w-4" />
+        </Link>
+      </div>
+
+      <nav className="border-t border-line bg-white" aria-label="Principal">
+        <div className="mx-auto flex max-w-7xl items-center gap-1 overflow-x-auto px-2 sm:px-4">
           {links.map((link) => {
             const active =
-              pathname === link.href ||
-              (link.href !== "/feed" && pathname.startsWith(link.href + "/")) ||
-              (link.href === "/feed" && pathname.startsWith("/feed") && !pathname.includes("sector"));
+              pathname === link.href || pathname.startsWith(link.href + "/");
             return (
               <Link
                 key={link.href}
                 href={link.href}
                 className={cn(
-                  "relative px-3 py-2 text-sm font-semibold transition-colors",
-                  active ? "text-navy" : "text-navy/55 hover:text-navy",
+                  "shrink-0 px-3 py-2.5 text-xs font-bold uppercase tracking-wide transition-colors",
+                  active
+                    ? "border-b-2 border-terracotta text-navy"
+                    : "text-navy/60 hover:text-navy",
                 )}
               >
                 {link.label}
-                {active ? (
-                  <span className="absolute inset-x-3 -bottom-0.5 h-0.5 rounded-full bg-navy" />
-                ) : null}
               </Link>
             );
           })}
-        </nav>
-
-        <div className="flex items-center gap-1 sm:gap-1.5">
-          <Link
-            href="/pesquisar"
-            className="inline-flex size-9 items-center justify-center rounded-full text-navy/70 hover:bg-navy/5 hover:text-navy"
-            aria-label="Pesquisar"
-          >
-            <Search className="h-5 w-5" strokeWidth={1.8} />
-          </Link>
-          <button
-            type="button"
-            className="relative inline-flex size-9 items-center justify-center rounded-full text-navy/70 hover:bg-navy/5 hover:text-navy"
-            aria-label="Notificações"
-          >
-            <Bell className="h-5 w-5" strokeWidth={1.8} />
-            <span className="absolute right-1.5 top-1.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-red-500 px-0.5 text-[9px] font-bold text-white">
-              1
-            </span>
-          </button>
-          <Link
-            href="/perfil"
-            className="hidden size-9 items-center justify-center rounded-full text-navy/70 hover:bg-navy/5 hover:text-navy sm:inline-flex"
-            aria-label="Definições"
-          >
-            <Settings className="h-5 w-5" strokeWidth={1.8} />
-          </Link>
-          <Link
-            href={session?.user ? "/perfil" : "/entrar"}
-            className="inline-flex size-9 items-center justify-center rounded-full border border-navy/15 bg-white text-navy hover:bg-navy hover:text-cream"
-            aria-label="Conta"
-          >
-            <UserRound className="h-4 w-4" strokeWidth={1.8} />
-          </Link>
+          <span className="ml-auto hidden shrink-0 px-3 py-2.5 text-xs text-muted-foreground md:inline">
+            {new Date().toLocaleDateString("pt-PT", {
+              weekday: "long",
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+            })}
+          </span>
         </div>
-      </div>
+      </nav>
     </header>
   );
 }

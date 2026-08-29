@@ -16,7 +16,7 @@ export function BottomNav() {
   const pathname = usePathname();
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-navy/10 bg-cream/90 backdrop-blur-md md:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white md:hidden"
       aria-label="Navegação principal"
     >
       <ul className="mx-auto flex max-w-lg items-stretch justify-around px-2 pb-[env(safe-area-inset-bottom)]">
@@ -27,8 +27,8 @@ export function BottomNav() {
               <Link
                 href={href}
                 className={cn(
-                  "flex flex-col items-center gap-1 px-2 py-2.5 text-[11px] font-medium transition-colors",
-                  active ? "text-terracotta" : "text-navy/55 hover:text-navy",
+                  "flex flex-col items-center gap-1 px-2 py-2.5 text-[11px] font-semibold transition-colors",
+                  active ? "text-navy" : "text-muted-foreground hover:text-navy",
                 )}
               >
                 <Icon className="h-5 w-5" strokeWidth={active ? 2.4 : 1.8} />

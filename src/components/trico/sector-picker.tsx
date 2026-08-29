@@ -21,24 +21,24 @@ import { cn } from "@/lib/utils";
 
 const PAIR: Record<SectorId, { left: ReactNode; right: ReactNode }> = {
   economia: {
-    left: <Activity className="h-7 w-7 text-navy" strokeWidth={1.6} />,
-    right: <Globe2 className="h-7 w-7 text-terracotta" strokeWidth={1.6} />,
+    left: <Activity className="h-5 w-5 text-navy" strokeWidth={1.6} />,
+    right: <Globe2 className="h-5 w-5 text-terracotta" strokeWidth={1.6} />,
   },
   politica: {
-    left: <Landmark className="h-7 w-7 text-navy" strokeWidth={1.6} />,
-    right: <Scale className="h-7 w-7 text-terracotta" strokeWidth={1.6} />,
+    left: <Landmark className="h-5 w-5 text-navy" strokeWidth={1.6} />,
+    right: <Scale className="h-5 w-5 text-terracotta" strokeWidth={1.6} />,
   },
   tecnologia: {
-    left: <LogoMark className="h-8 w-9" />,
-    right: <Network className="h-7 w-7 text-navy" strokeWidth={1.6} />,
+    left: <LogoMark className="h-6 w-7" />,
+    right: <Network className="h-5 w-5 text-navy" strokeWidth={1.6} />,
   },
   energia: {
-    left: <SunMedium className="h-7 w-7 text-terracotta" strokeWidth={1.6} />,
-    right: <Zap className="h-7 w-7 text-navy" strokeWidth={1.6} />,
+    left: <SunMedium className="h-5 w-5 text-terracotta" strokeWidth={1.6} />,
+    right: <Zap className="h-5 w-5 text-navy" strokeWidth={1.6} />,
   },
   saude: {
-    left: <Building2 className="h-7 w-7 text-navy" strokeWidth={1.6} />,
-    right: <HeartPulse className="h-7 w-7 text-terracotta" strokeWidth={1.6} />,
+    left: <Building2 className="h-5 w-5 text-navy" strokeWidth={1.6} />,
+    right: <HeartPulse className="h-5 w-5 text-terracotta" strokeWidth={1.6} />,
   },
 };
 
@@ -52,7 +52,7 @@ export function SectorPicker({
   mode?: "toggle" | "link";
 }) {
   return (
-    <div className="grid grid-cols-2 gap-3 sm:gap-4">
+    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
       {SECTORS.map((sector) => {
         const on = selected.includes(sector.id);
         const icons = PAIR[sector.id];
@@ -67,29 +67,20 @@ export function SectorPicker({
                 <Switch
                   checked={on}
                   onCheckedChange={() => onToggle?.(sector.id)}
-                  className="data-checked:bg-terracotta"
+                  className="data-checked:bg-navy"
                   aria-label={sector.short}
                 />
               ) : null}
             </div>
-            <div className="mt-auto pt-4">
-              <p className="text-base font-bold text-navy sm:text-lg">
-                {sector.short}
+            <div className="mt-3">
+              <p className="font-bold text-navy">{sector.short}</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {mode === "toggle"
+                  ? on
+                    ? "Ligado"
+                    : "Desligado"
+                  : sector.description}
               </p>
-              {mode === "toggle" ? (
-                <p
-                  className={cn(
-                    "mt-1 text-[10px] font-bold uppercase tracking-[0.14em]",
-                    on ? "text-terracotta" : "text-navy/35",
-                  )}
-                >
-                  {on ? "On · Ligado" : "Desligado"}
-                </p>
-              ) : (
-                <p className="mt-1 line-clamp-2 text-xs text-navy/55">
-                  {sector.description}
-                </p>
-              )}
             </div>
           </>
         );
@@ -99,7 +90,7 @@ export function SectorPicker({
             <Link
               key={sector.id}
               href={`/sector/${sector.id}`}
-              className="flex min-h-[148px] flex-col rounded-2xl bg-tan p-4 transition hover:bg-sand"
+              className="border border-line bg-white p-4 transition hover:border-navy/40"
             >
               {body}
             </Link>
@@ -112,10 +103,8 @@ export function SectorPicker({
             type="button"
             onClick={() => onToggle?.(sector.id)}
             className={cn(
-              "flex min-h-[148px] flex-col rounded-2xl p-4 text-left transition",
-              on
-                ? "bg-tan ring-2 ring-terracotta/35"
-                : "bg-tan/80 hover:bg-tan",
+              "border p-4 text-left transition",
+              on ? "border-navy bg-secondary" : "border-line bg-white hover:border-navy/30",
             )}
           >
             {body}
