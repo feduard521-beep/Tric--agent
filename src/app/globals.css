@@ -167,24 +167,27 @@
   /* Scroll reveal — padrão Aliva/AOS */
   .sr-base {
     opacity: 0;
-    transition-property: opacity, transform;
-    transition-timing-function: cubic-bezier(0.47, 0, 0.745, 0.715); /* ease-in-sine (Aliva/AOS) */
+    transition-property: none;
     will-change: opacity, transform;
   }
+  .sr-ready {
+    transition-property: opacity, transform;
+    transition-timing-function: cubic-bezier(0.47, 0, 0.745, 0.715); /* ease-in-sine */
+  }
   .sr-up {
-    transform: translate3d(0, 36px, 0);
+    transform: translate3d(0, 56px, 0);
   }
   .sr-down {
-    transform: translate3d(0, -28px, 0);
+    transform: translate3d(0, -40px, 0);
   }
   .sr-left {
-    transform: translate3d(-40px, 0, 0);
+    transform: translate3d(-56px, 0, 0);
   }
   .sr-right {
-    transform: translate3d(40px, 0, 0);
+    transform: translate3d(56px, 0, 0);
   }
   .sr-zoom {
-    transform: scale(0.94);
+    transform: scale(0.9);
   }
   .sr-in {
     opacity: 1;
