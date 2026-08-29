@@ -168,7 +168,7 @@
   .sr-base {
     opacity: 0;
     transition-property: opacity, transform;
-    transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+    transition-timing-function: cubic-bezier(0.47, 0, 0.745, 0.715); /* ease-in-sine (Aliva/AOS) */
     will-change: opacity, transform;
   }
   .sr-up {
