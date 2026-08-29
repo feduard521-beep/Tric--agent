@@ -196,3 +196,20 @@ model AdCampaign {
   @@index([active, placement, sectorId])
   @@index([startsAt, endsAt])
 }
+
+// --- Pedidos de publicidade (parceiros) ---
+
+model PartnerLead {
+  id          String   @id @default(cuid())
+  company     String
+  contactName String
+  email       String
+  phone       String   @default("")
+  packageId   String
+  sectorId    String?
+  message     String   @default("")
+  status      String   @default("new") // new | contacted | closed
+  createdAt   DateTime @default(now())
+
+  @@index([status, createdAt])
+}

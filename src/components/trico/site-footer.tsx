@@ -6,7 +6,7 @@ import { SECTORS } from "@/lib/sectors";
 export function SiteFooter() {
   return (
     <footer className="mt-10 border-t border-line bg-white">
-      <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 md:grid-cols-3">
+      <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 md:grid-cols-4">
         <div>
           <Logo size="sm" href="/" />
           <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted-foreground">
@@ -49,6 +49,26 @@ export function SiteFooter() {
                 </Link>
               </li>
             ))}
+          </ul>
+        </div>
+        <div>
+          <SectionBar title="Comercial" />
+          <ul className="space-y-2 text-sm font-semibold text-navy">
+            <li>
+              <Link href="/anunciar" className="hover:text-terracotta">
+                Anunciar no Tricô
+              </Link>
+            </li>
+            <li>
+              <Link href="/premium" className="hover:text-terracotta">
+                Premium · 2000 Kz
+              </Link>
+            </li>
+            <li>
+              <Link href="/feed" className="hover:text-terracotta">
+                Ver feed
+              </Link>
+            </li>
           </ul>
         </div>
       </div>

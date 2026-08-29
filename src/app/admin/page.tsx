@@ -43,10 +43,23 @@ type AdminAd = {
   clicks: number;
 };
 
+type AdminLead = {
+  id: string;
+  company: string;
+  contactName: string;
+  email: string;
+  phone: string;
+  packageId: string;
+  sectorId: string | null;
+  status: string;
+  createdAt: string;
+};
+
 type AdminPayload = {
   users: AdminUser[];
   payments?: AdminPayment[];
   ads?: AdminAd[];
+  leads?: AdminLead[];
   providers?: { newsdata: boolean; gnews: boolean; newsapi: boolean };
   stats: {
     pieces?: number;
@@ -211,6 +224,25 @@ export default function AdminPage() {
       if (!res.ok) setMessage(json.error || "Falha ao carregar exemplos.");
       else {
         setMessage(`${(json.ads || []).length} campanhas de exemplo activas.`);
+        await load();
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function setLeadStatus(leadId: string, leadStatus: string) {
+    setBusy(true);
+    try {
+      const res = await fetch("/api/admin", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: "setLeadStatus", leadId, leadStatus }),
+      });
+      const json = await res.json();
+      if (!res.ok) setMessage(json.error || "Falha ao actualizar lead.");
+      else {
+        setMessage(`${json.lead.company} → ${json.lead.status}`);
         await load();
       }
     } finally {
@@ -436,6 +468,72 @@ export default function AdminPage() {
                         >
                           {ad.active ? "Pausar" : "Activar"}
                         </Button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section className="mt-10">
+          <h2 className="font-display text-xl font-semibold text-navy">
+            Pedidos de publicidade
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Formulário em{" "}
+            <Link href="/anunciar" className="underline">
+              /anunciar
+            </Link>
+            .
+          </p>
+          <div className="mt-4 overflow-x-auto border border-line">
+            <table className="w-full min-w-[720px] text-left text-sm">
+              <thead className="border-b border-line text-navy/55">
+                <tr>
+                  <th className="px-4 py-3 font-medium">Empresa</th>
+                  <th className="px-4 py-3 font-medium">Pacote</th>
+                  <th className="px-4 py-3 font-medium">Sector</th>
+                  <th className="px-4 py-3 font-medium">Contacto</th>
+                  <th className="px-4 py-3 font-medium">Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(data?.leads || []).length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-4 py-6 text-muted-foreground">
+                      Ainda sem pedidos de parceiros.
+                    </td>
+                  </tr>
+                ) : (
+                  (data?.leads || []).map((lead) => (
+                    <tr key={lead.id} className="border-b border-line last:border-0">
+                      <td className="px-4 py-3">
+                        <div className="font-medium text-navy">{lead.company}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {lead.contactName}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 font-mono text-xs">{lead.packageId}</td>
+                      <td className="px-4 py-3">{lead.sectorId || "todos"}</td>
+                      <td className="px-4 py-3">
+                        <div>{lead.email}</div>
+                        <div className="text-xs text-muted-foreground">{lead.phone || "—"}</div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <select
+                          className="h-8 border border-line bg-white px-2 text-xs"
+                          value={lead.status}
+                          disabled={busy}
+                          onChange={(e) =>
+                            void setLeadStatus(lead.id, e.target.value)
+                          }
+                        >
+                          <option value="new">Novo</option>
+                          <option value="contacted">Contactado</option>
+                          <option value="closed">Fechado</option>
+                        </select>
                       </td>
                     </tr>
                   ))

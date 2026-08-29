@@ -30,7 +30,7 @@ export async function GET() {
     );
   }
 
-  const [users, pieceStats, lastIngest, feedCount, payments, ads] =
+  const [users, pieceStats, lastIngest, feedCount, payments, ads, leads] =
     await Promise.all([
     prisma.user.findMany({
       orderBy: { createdAt: "desc" },
@@ -61,12 +61,17 @@ export async function GET() {
       await ensureExampleAds().catch(() => undefined);
       return listAllAdsAdmin();
     })(),
+    (async () => {
+      const { listPartnerLeads } = await import("@/lib/modules/ads/leads");
+      return listPartnerLeads(40);
+    })(),
   ]);
 
   return NextResponse.json({
     users,
     payments,
     ads,
+    leads,
     providers: getActiveNewsProviders(),
     stats: {
       ...pieceStats,
@@ -97,6 +102,8 @@ export async function POST(req: Request) {
     paymentId?: string;
     adId?: string;
     active?: boolean;
+    leadId?: string;
+    leadStatus?: string;
   } = {};
   try {
     body = await req.json();
@@ -173,6 +180,18 @@ export async function POST(req: Request) {
     await prisma.adCampaign.deleteMany({});
     await ensureExampleAds();
     return NextResponse.json({ ads: await listAllAdsAdmin() });
+  }
+
+  if (body.action === "setLeadStatus" && body.leadId && body.leadStatus) {
+    if (!["new", "contacted", "closed"].includes(body.leadStatus)) {
+      return NextResponse.json({ error: "Estado inválido." }, { status: 400 });
+    }
+    const { updatePartnerLeadStatus } = await import("@/lib/modules/ads/leads");
+    const lead = await updatePartnerLeadStatus(
+      body.leadId,
+      body.leadStatus as "new" | "contacted" | "closed",
+    );
+    return NextResponse.json({ lead });
   }
 
   return NextResponse.json({ error: "Acção desconhecida." }, { status: 400 });

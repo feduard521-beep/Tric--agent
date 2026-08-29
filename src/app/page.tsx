@@ -143,12 +143,20 @@ export default async function LandingPage() {
                 Personaliza sectores e recebe o fio do dia.
               </p>
             </div>
-            <Link
-              href="/onboarding"
-              className="inline-flex h-10 items-center bg-terracotta px-4 text-sm font-bold text-white hover:bg-terracotta/90"
-            >
-              Escolher temas
-            </Link>
+            <div className="flex flex-wrap gap-2">
+              <Link
+                href="/anunciar"
+                className="inline-flex h-10 items-center border border-white/40 px-4 text-sm font-bold text-white hover:bg-white/10"
+              >
+                Anunciar
+              </Link>
+              <Link
+                href="/onboarding"
+                className="inline-flex h-10 items-center bg-terracotta px-4 text-sm font-bold text-white hover:bg-terracotta/90"
+              >
+                Escolher temas
+              </Link>
+            </div>
           </section>
         </ScrollReveal>
       </main>

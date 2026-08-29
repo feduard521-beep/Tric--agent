@@ -37,9 +37,17 @@ export function AppHeader({ solid = false }: { solid?: boolean }) {
           <p className="truncate font-medium tracking-wide">
             As notícias do teu sector, tecidas para ti · Angola
           </p>
-          <Link href="/entrar" className="shrink-0 font-semibold text-white/90 hover:text-white">
-            {session?.user ? session.user.email : "Entrar / Registar"}
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/anunciar"
+              className="hidden shrink-0 font-semibold text-white/80 hover:text-white sm:inline"
+            >
+              Anunciar
+            </Link>
+            <Link href="/entrar" className="shrink-0 font-semibold text-white/90 hover:text-white">
+              {session?.user ? session.user.email : "Entrar / Registar"}
+            </Link>
+          </div>
         </div>
       </div>
 
